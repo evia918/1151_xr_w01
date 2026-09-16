@@ -1,0 +1,1141 @@
+<title>XR遊戲實作 第一單元</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --paper:#E8EDF1; --surface:#FFFFFF; --surface-2:#F3F6F8;
+  --ink:#122129; --ink-2:#4B6673; --ink-3:#7B929E;
+  --line:#C8D5DD; --line-soft:#DFE8ED;
+  --mr:#CF4E18; --mr-soft:#FBEAE2;
+  --vr:#3A4BAE; --vr-soft:#E6E9F8;
+  --ok:#1B6F56; --ok-soft:#E1F0EA;
+  --warn:#9C6410; --warn-soft:#F8EEDC;
+  --shadow:0 1px 2px rgba(18,33,41,.06),0 8px 24px rgba(18,33,41,.07);
+  --f-zh:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-la:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-mo:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0C171D; --surface:#14232C; --surface-2:#1B303A;
+    --ink:#E3ECF1; --ink-2:#97AEBA; --ink-3:#7793A1;
+    --line:#26404E; --line-soft:#1E3541;
+    --mr:#FF8A5B; --mr-soft:#3A2016;
+    --vr:#93A2F2; --vr-soft:#1D2547;
+    --ok:#52CCA4; --ok-soft:#10312A;
+    --warn:#E3AC55; --warn-soft:#332616;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0C171D; --surface:#14232C; --surface-2:#1B303A;
+  --ink:#E3ECF1; --ink-2:#97AEBA; --ink-3:#7793A1;
+  --line:#26404E; --line-soft:#1E3541;
+  --mr:#FF8A5B; --mr-soft:#3A2016;
+  --vr:#93A2F2; --vr-soft:#1D2547;
+  --ok:#52CCA4; --ok-soft:#10312A;
+  --warn:#E3AC55; --warn-soft:#332616;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-la),var(--f-zh);font-size:15px;line-height:1.66;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+h1,h2,h3,h4,p,ul,ol{margin:0}
+ul,ol{padding-left:1.15em}
+li{margin-block:.42em}
+strong{font-weight:700}
+code{font-family:var(--f-mo);font-size:.88em;background:var(--surface-2);
+  border:1px solid var(--line-soft);border-radius:4px;padding:.08em .38em}
+
+/* ---------- 中英對照：英文層 ---------- */
+.en{
+  display:block;font-family:var(--f-la);font-size:.845em;line-height:1.48;
+  color:var(--ink-3);letter-spacing:.004em;font-weight:400;margin-top:2px;
+}
+body[data-en="off"] .en{display:none}
+h2.title .en{font-size:.44em;font-weight:500;color:var(--ink-2);margin-top:8px;line-height:1.35}
+.lead .en{font-size:.87em;margin-top:5px}
+td .en,th .en{font-size:11.5px;margin-top:3px}
+h3.sec .en{font-size:12.5px;margin-top:3px;font-weight:400}
+.vid h4 .en{font-size:12.5px;color:var(--ink-3);margin-top:3px}
+.figcap .en{font-size:11.5px;margin-top:4px}
+.note .en,.good .en{font-size:12.5px;margin-top:5px;color:var(--ink-2)}
+.toc span .en{font-size:11px;margin-top:2px}
+.meta dd .en{font-size:11px;font-family:var(--f-mo);margin-top:1px}
+
+/* ---------- chrome ---------- */
+.topbar{
+  flex:0 0 auto;display:flex;align-items:center;gap:12px;
+  padding:10px 20px;padding-top:calc(10px + env(safe-area-inset-top,0px));
+  background:var(--surface);border-bottom:1px solid var(--line);
+}
+.brand{font-family:var(--f-zh);font-weight:900;font-size:14px;white-space:nowrap}
+.brand span{color:var(--mr)}
+.lockchip{
+  font-family:var(--f-mo);font-size:11px;font-weight:600;
+  color:var(--ok);background:var(--ok-soft);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent);
+  border-radius:99px;padding:3px 10px;white-space:nowrap;
+}
+.topbar .sp{flex:1 1 auto}
+.tbtn{
+  appearance:none;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
+  font-family:var(--f-mo);font-size:11px;border-radius:8px;padding:5px 10px;cursor:pointer;white-space:nowrap;
+}
+.tbtn:hover{color:var(--ink);border-color:var(--ink-3)}
+.progress{flex:0 0 auto;height:3px;background:var(--line-soft)}
+.progress i{display:block;height:100%;background:var(--mr);width:0;transition:width .25s ease}
+
+.stage{flex:1 1 auto;overflow-y:auto;overflow-x:hidden}
+.slide{max-width:1020px;margin:0 auto;padding:32px 20px 46px;display:flex;flex-direction:column;gap:18px}
+@media(prefers-reduced-motion:no-preference){.slide{animation:rise .28s ease both}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.navbar{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:10px 20px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+  background:var(--surface);border-top:1px solid var(--line);
+}
+.navbtn{
+  appearance:none;cursor:pointer;font-family:var(--f-zh);font-weight:700;font-size:13px;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+  border-radius:10px;padding:9px 15px;white-space:nowrap;
+}
+.navbtn:hover:not(:disabled){border-color:var(--mr);color:var(--mr)}
+.navbtn:disabled{opacity:.35;cursor:not-allowed}
+.navbtn:focus-visible,.tbtn:focus-visible,select:focus-visible,.toc button:focus-visible,.vid:focus-visible{outline:2px solid var(--mr);outline-offset:2px}
+.counter{flex:1 1 auto;text-align:center;font-family:var(--f-mo);font-size:12px;color:var(--ink-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.counter b{color:var(--ink);font-weight:600}
+.jump{font-family:var(--f-zh);font-size:12px;max-width:min(40vw,250px);
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:8px;padding:6px 8px}
+
+/* ---------- typography ---------- */
+.eyebrow{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.num{font-family:var(--f-mo);font-weight:600;font-size:13px;letter-spacing:.06em;
+  color:var(--mr);background:var(--mr-soft);border-radius:6px;padding:3px 9px}
+.kicker{font-family:var(--f-mo);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.part{font-family:var(--f-mo);font-size:11px;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:2px 7px}
+h2.title{font-family:var(--f-zh);font-weight:900;font-size:clamp(23px,4.2vw,34px);line-height:1.26;text-wrap:balance}
+.lead{font-family:var(--f-zh);font-size:15.5px;color:var(--ink-2);max-width:66ch}
+h3.sec{font-family:var(--f-zh);font-weight:700;font-size:15.5px;display:flex;align-items:flex-start;gap:9px}
+h3.sec::before{content:"";width:4px;height:17px;background:var(--mr);border-radius:2px;flex:0 0 auto;margin-top:4px}
+
+.card{background:var(--surface);border:1px solid var(--line-soft);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.flat{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.vrcard{border-top:3px solid var(--vr)}
+.mrcard{border-top:3px solid var(--mr)}
+.tag{font-family:var(--f-mo);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.tag.vr{color:var(--vr)} .tag.mr{color:var(--mr)}
+
+.note{border-left:3px solid var(--warn);background:var(--warn-soft);border-radius:0 10px 10px 0;padding:12px 16px;font-size:14px}
+.note b{color:var(--warn)}
+.good{border-left:3px solid var(--ok);background:var(--ok-soft);border-radius:0 10px 10px 0;padding:12px 16px;font-size:14px}
+
+.scroll{overflow-x:auto;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:13.5px}
+th,td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{background:var(--surface-2);font-family:var(--f-zh);font-weight:700;font-size:12.5px;
+  color:var(--ink-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.mono,th.mono{font-family:var(--f-mo);font-variant-numeric:tabular-nums}
+.wk{font-family:var(--f-mo);font-size:12px;color:var(--ink-3);white-space:nowrap}
+
+svg{display:block;max-width:100%;height:auto}
+.fig{background:var(--surface);border:1px solid var(--line-soft);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.figcap{font-size:12.5px;color:var(--ink-3);margin-top:10px;font-family:var(--f-zh)}
+
+.vidlist{display:flex;flex-direction:column;gap:12px}
+.vid{display:flex;gap:14px;align-items:flex-start;text-decoration:none;color:inherit;
+  background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;
+  box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.vid:hover{border-color:var(--mr);transform:translateX(2px)}
+.play{flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:var(--mr-soft);display:grid;place-items:center;margin-top:2px}
+.vid h4{font-family:var(--f-zh);font-weight:700;font-size:14.5px;line-height:1.45}
+.vid p{font-size:12.5px;color:var(--ink-2);margin-top:4px}
+.vid .why{font-size:12.5px;color:var(--mr);margin-top:6px;font-family:var(--f-zh);display:block}
+.vid .why .en{color:color-mix(in srgb,var(--mr) 70%,var(--ink-3))}
+
+.toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:10px}
+.toc button{text-align:left;cursor:pointer;font:inherit;font-family:var(--f-zh);
+  background:var(--surface);border:1px solid var(--line-soft);border-radius:11px;
+  padding:12px 14px;color:var(--ink);display:flex;gap:11px;align-items:flex-start}
+.toc button:hover{border-color:var(--mr)}
+.toc b{font-family:var(--f-mo);font-size:12px;color:var(--mr);font-weight:600;flex:0 0 auto;margin-top:2px}
+.toc span{font-size:14px;font-weight:500}
+.toc small{display:block;color:var(--ink-3);font-size:11.5px;font-weight:400;margin-top:2px}
+
+.cover{gap:24px;padding-top:50px}
+.cover .big{font-family:var(--f-zh);font-weight:900;font-size:clamp(29px,6.2vw,50px);line-height:1.14;letter-spacing:-.01em}
+.cover .big em{font-style:normal;color:var(--mr)}
+.cover .bigen{font-family:var(--f-la);font-weight:600;font-size:clamp(14px,2.4vw,20px);color:var(--ink-2);margin-top:10px;letter-spacing:.01em}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px}
+.meta div{background:var(--surface);border:1px solid var(--line-soft);border-radius:11px;padding:11px 14px}
+.meta dt{font-family:var(--f-mo);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.meta dd{margin:2px 0 0;font-family:var(--f-zh);font-weight:700;font-size:14px}
+.kbd{font-family:var(--f-mo);font-size:11px;border:1px solid var(--line);border-bottom-width:2px;
+  border-radius:5px;padding:1px 5px;color:var(--ink-2);background:var(--surface-2)}
+
+@media(max-width:640px){
+  .slide{padding:24px 16px 38px}
+  .jump{display:none}
+  .lockchip{display:none}
+}
+</style>
+
+<header class="topbar">
+  <div class="brand">XR遊戲實作 · <span>第一單元</span></div>
+  <div class="lockchip">Unity 6.3 LTS · 6000.3.18f1</div>
+  <div class="sp"></div>
+  <button class="tbtn" id="enbtn" type="button">中英 ⇄ 中</button>
+  <button class="tbtn" id="themebtn" type="button">◐</button>
+</header>
+<div class="progress"><i id="bar"></i></div>
+
+<main class="stage" id="stage" tabindex="-1">
+
+<!-- ============ 封面 ============ -->
+<section class="slide cover" data-toc="封面 Cover" data-n="封面">
+  <div class="kicker">Hungkuang University · 115-1 · Week 01</div>
+  <h1 class="big">從虛擬再回到<em>真實</em>
+    <span class="bigen">From Virtual, Back to Reality</span></h1>
+  <p class="lead">第一單元｜課程導論：MR 混合實境趨勢與 Quest 3 開發環境建置
+    <span class="en">Unit 1｜Course Introduction: MR Trends &amp; Quest 3 Environment Setup</span></p>
+  <dl class="meta">
+    <div><dt>Course</dt><dd>XR遊戲實作<span class="en">Course code 00928</span></dd></div>
+    <div><dt>Class</dt><dd>日四技 甲班 · EB101<span class="en">Day Div. · Class A</span></dd></div>
+    <div><dt>Time</dt><dd>週三 第六～八節<span class="en">Wed. P6–P8 · 3 credits</span></dd></div>
+    <div><dt>Instructor</dt><dd>洪明顯<span class="en">Ming-Hsien Hung</span></dd></div>
+    <div><dt>Headset</dt><dd>Meta Quest 3<span class="en">Core hardware</span></dd></div>
+    <div><dt>Engine</dt><dd>Unity 6.3 LTS<span class="en">6000.3.18f1</span></dd></div>
+  </dl>
+  <p class="lead" style="font-size:13.5px">操作方式：點下方「上一頁／下一頁」，或使用鍵盤 <span class="kbd">←</span> <span class="kbd">→</span> 翻頁。右上角可切換中英對照／純中文。
+    <span class="en">Navigation: use the Prev / Next buttons below, or the <span class="kbd">←</span> <span class="kbd">→</span> keys. The top-right button toggles bilingual / Chinese-only.</span></p>
+</section>
+
+<!-- ============ 1.0 ============ -->
+<section class="slide" data-toc="1.0 本單元目錄 Unit Map" data-n="1.0">
+  <div class="eyebrow"><span class="num">1.0</span><span class="kicker">Unit Map</span></div>
+  <h2 class="title">本單元目錄<span class="en">Contents of Unit 1</span></h2>
+  <p class="lead">第一單元共 6 個小節。1.3 是本週講述重點（上學期已修過 AR/VR，這節要把界線劃清楚）；1.7 是本週必須完成的實作。
+    <span class="en">Six sections in total. Section 1.3 is the core of this week's lecture — you already studied AR/VR last semester, so this section draws the boundary precisely. Section 1.7 is the hands-on task you must complete this week.</span></p>
+  <div class="toc" id="toc"></div>
+</section>
+
+<!-- ============ 1.1 (1/2) ============ -->
+<section class="slide" data-toc="1.1 學習動機 Motivation (1/2)" data-n="1.1">
+  <div class="eyebrow"><span class="num">1.1</span><span class="kicker">Motivation</span><span class="part">1 / 2</span></div>
+  <h2 class="title">學習動機：為什麼要從 VR 走進 MR<span class="en">Why we move from VR into MR</span></h2>
+  <p class="lead">你們上學期做的 AR/VR，虛擬與真實是「並存」的；這學期要做的 MR，虛擬與真實是「互相認得」的。
+    <span class="en">In the AR/VR work you did last semester, the virtual and the real merely coexisted. In the MR work of this semester, they recognise each other.</span></p>
+
+  <div class="fig">
+    <svg viewBox="0 0 720 164" role="img" aria-label="VR 取代真實環境，MR 讓虛擬物件認得真實幾何">
+      <rect x="8" y="12" width="330" height="134" rx="12" fill="var(--vr-soft)" stroke="var(--vr)" stroke-width="1.5"/>
+      <text x="24" y="36" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="600" fill="var(--vr)">VR — 取代真實 / Replaces reality</text>
+      <rect x="24" y="52" width="118" height="62" rx="6" fill="var(--vr)" opacity=".85"/>
+      <text x="83" y="80" text-anchor="middle" font-size="11.5" fill="#fff" font-family="Noto Sans TC,sans-serif">全虛擬場景</text>
+      <text x="83" y="95" text-anchor="middle" font-size="9.5" fill="#fff" opacity=".85" font-family="Archivo,sans-serif">Fully virtual</text>
+      <text x="158" y="90" font-size="20" fill="var(--vr)">→</text>
+      <circle cx="250" cy="83" r="27" fill="none" stroke="var(--vr)" stroke-width="2"/>
+      <text x="250" y="80" text-anchor="middle" font-size="11" fill="var(--vr)" font-family="Noto Sans TC,sans-serif">眼睛</text>
+      <text x="250" y="93" text-anchor="middle" font-size="9" fill="var(--vr)" font-family="Archivo,sans-serif">Eye</text>
+      <text x="173" y="136" font-size="10.5" fill="var(--ink-3)" font-family="Noto Sans TC,sans-serif">真實房間被完全遮蔽 / Real room is fully occluded</text>
+
+      <rect x="382" y="12" width="330" height="134" rx="12" fill="var(--mr-soft)" stroke="var(--mr)" stroke-width="1.5"/>
+      <text x="398" y="36" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="600" fill="var(--mr)">MR — 認得真實 / Understands reality</text>
+      <path d="M400 126 L400 60 L470 52 L540 60 L540 126 Z" fill="none" stroke="var(--mr)" stroke-width="1.6" stroke-dasharray="4 3"/>
+      <circle cx="452" cy="80" r="9" fill="var(--mr)"/>
+      <circle cx="500" cy="100" r="6" fill="var(--mr)" opacity=".7"/>
+      <circle cx="478" cy="66" r="4.5" fill="var(--mr)" opacity=".55"/>
+      <text x="470" y="140" text-anchor="middle" font-size="10" fill="var(--ink-3)" font-family="Noto Sans TC,sans-serif">真實牆面幾何 / Real wall geometry</text>
+      <text x="566" y="90" font-size="20" fill="var(--mr)">→</text>
+      <circle cx="655" cy="83" r="27" fill="none" stroke="var(--mr)" stroke-width="2"/>
+      <text x="655" y="80" text-anchor="middle" font-size="11" fill="var(--mr)" font-family="Noto Sans TC,sans-serif">眼睛</text>
+      <text x="655" y="93" text-anchor="middle" font-size="9" fill="var(--mr)" font-family="Archivo,sans-serif">Eye</text>
+    </svg>
+    <p class="figcap">圖 1.1｜VR 把真實換掉；MR 讓虛擬漆點「貼在你家那面牆」上——差別不在畫面好看，而在虛擬物件是否取得了真實空間的幾何資料。
+      <span class="en">Fig. 1.1｜VR replaces reality; MR makes the paint splat land on <em>your</em> wall. The difference is not visual polish — it is whether the virtual object has obtained the geometry of the real space.</span></p>
+  </div>
+</section>
+
+<!-- ============ 1.1 (2/2) ============ -->
+<section class="slide" data-toc="1.1 學習動機 Motivation (2/2)" data-n="1.1">
+  <div class="eyebrow"><span class="num">1.1</span><span class="kicker">Motivation</span><span class="part">2 / 2</span></div>
+  <h2 class="title">三個理由<span class="en">Three reasons this matters to you</span></h2>
+  <div class="grid3">
+    <div class="flat"><h3 class="sec"><span>產業已經換跑道<span class="en">The industry has changed lanes</span></span></h3>
+      <ul><li>Quest 3／3S、Vision Pro 等主流頭盔均以<strong>彩色透視（Passthrough）</strong>為預設體驗
+          <span class="en">Mainstream headsets now ship with colour passthrough as the default experience.</span></li>
+        <li>職缺描述從「VR 開發」轉向「空間運算 Spatial Computing」
+          <span class="en">Job postings have shifted from "VR development" to "spatial computing".</span></li></ul></div>
+    <div class="flat"><h3 class="sec"><span>技能落差最大處<span class="en">Where your skill gap is widest</span></span></h3>
+      <ul><li>建模、動畫、UI 你們已有基礎
+          <span class="en">You already have the modelling, animation and UI foundations.</span></li>
+        <li><strong>空間理解（Scene / Depth / Anchor）</strong>是 VR 課沒教、業界卻在用的部分
+          <span class="en">Spatial understanding — Scene, Depth, Anchor — was not covered in the VR course, yet it is what the industry uses.</span></li></ul></div>
+    <div class="flat"><h3 class="sec"><span>畢專可直接延伸<span class="en">Extends directly into your capstone</span></span></h3>
+      <ul><li>本課兩大主題皆為可獨立展示的完整作品
+          <span class="en">Both course themes are complete, demonstrable pieces on their own.</span></li>
+        <li>版本鎖定至 2027/12，畢專期間不需重建專案
+          <span class="en">The toolchain is locked with support through Dec 2027 — no project rebuild during your capstone year.</span></li></ul></div>
+  </div>
+  <div class="good">上學期的 AR/VR 不是白學的——本課程的渲染、互動、UI 都建立在那套基礎上，新增的只有「空間」這一層。
+    <span class="en">Last semester's AR/VR work is not discarded. Rendering, interaction and UI all build on it; what this course adds is one new layer — space.</span></div>
+</section>
+
+<!-- ============ 1.2 ============ -->
+<section class="slide" data-toc="1.2 學習目的 Objectives" data-n="1.2">
+  <div class="eyebrow"><span class="num">1.2</span><span class="kicker">Objectives</span></div>
+  <h2 class="title">學習目的：修完這門課你會什麼<span class="en">What you will be able to do by the end of this course</span></h2>
+  <p class="lead">五項教學目標，對應課程的五個能力區塊。每一項在期末都有具體的驗收物件。
+    <span class="en">Five teaching objectives, mapped to five capability blocks. Each one has a concrete deliverable that will be assessed.</span></p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th class="mono">#</th><th>教學目標<span class="en">Objective</span></th><th>你要交出的東西<span class="en">What you must deliver</span></th><th class="wk">週次<span class="en">Weeks</span></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1</td>
+          <td><strong>掌握 MR 空間運算核心開發技術</strong><span class="en">Master the core techniques of MR spatial computing</span></td>
+          <td>能用 MRUK 取得房間牆面／地板，並在其上生成物件<span class="en">Retrieve wall and floor anchors via MRUK and spawn objects on them</span></td><td class="wk">W2–W3</td></tr>
+        <tr><td class="mono">2</td>
+          <td><strong>精通遊戲效能優化與貼圖技術</strong><span class="en">Game performance optimisation and surface texturing</span></td>
+          <td>連射 200 發漆彈，Profiler 無 GC 尖峰、維持 72 fps<span class="en">Fire 200 paintballs with no GC spike in the Profiler, holding 72 fps</span></td><td class="wk">W5–W6</td></tr>
+        <tr><td class="mono">3</td>
+          <td><strong>具備空間幾何與尋路演算法實作能力</strong><span class="en">Implement spatial geometry and path-following algorithms</span></td>
+          <td>在真實地板上編輯節點跑道，小車平滑跟隨<span class="en">Author a node track on the real floor; the car follows it smoothly</span></td><td class="wk">W10–W12</td></tr>
+        <tr><td class="mono">4</td>
+          <td><strong>深入實作空間遮蔽與進階互動</strong><span class="en">Environment occlusion and advanced interaction</span></td>
+          <td>小車開到真實沙發後方會被正確遮住（Depth API）<span class="en">The car is correctly hidden when it drives behind a real sofa (Depth API)</span></td><td class="wk">W13–W14</td></tr>
+        <tr><td class="mono">5</td>
+          <td><strong>養成團隊專案整合與問題解決職能</strong><span class="en">Project integration and problem-solving competence</span></td>
+          <td>可安裝於頭盔的 APK ＋ 成果發表<span class="en">An installable APK plus a final presentation</span></td><td class="wk">W15–W18</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="good"><strong>共通職能：</strong>05 問題解決、08 資訊科技應用。<strong>SDGs：</strong>04 教育品質（能力本位課程與學習成果評量）。
+    <span class="en"><strong>Core competencies:</strong> 05 Problem solving · 08 Applied information technology. <strong>SDGs:</strong> 04 Quality Education (competency-based curriculum and learning-outcome assessment).</span></div>
+</section>
+
+<!-- ============ 1.3 扉頁 ============ -->
+<section class="slide" data-toc="1.3 MR 與 VR 的差異 MR vs VR" data-n="1.3">
+  <div class="eyebrow"><span class="num">1.3</span><span class="kicker">Core Concept</span></div>
+  <h2 class="title">MR 與 VR 的差異<span class="en">How Mixed Reality differs from Virtual Reality</span></h2>
+  <p class="lead">本節從四個面向拆解，這四個面向也是你未來寫技術文件、做畢專簡報時該有的分析架構。
+    <span class="en">This section breaks the question down along four dimensions — the same analytical frame you should use later when writing technical documents or presenting your capstone.</span></p>
+  <div class="toc">
+    <button data-go="1.3.1"><b>1.3.1</b><span>名稱定義<small>Milgram 連續光譜：VR / AR / MR / XR 各站在哪裡<span class="en">Definitions — where each term sits on the Milgram continuum</span></small></span></button>
+    <button data-go="1.3.2"><b>1.3.2</b><span>技術面<small>渲染管線差異：誰在提供真實世界的資料<span class="en">Technical — pipeline differences and where real-world data comes from</span></small></span></button>
+    <button data-go="1.3.3"><b>1.3.3</b><span>執行效果<small>使用者實際看到、感受到什麼<span class="en">Experience — what the user actually sees and feels</span></small></span></button>
+    <button data-go="1.3.4"><b>1.3.4</b><span>硬體設備<small>Quest 3 / 3S / Pro / Vision Pro 規格分野<span class="en">Hardware — how the headsets differ on paper</span></small></span></button>
+    <button data-go="1.3.5"><b>1.3.5</b><span>影片觀摩<small>三支 YouTube 影片＋漆彈射擊展示<span class="en">Watch — three videos plus the paintball demo question</span></small></span></button>
+  </div>
+  <div class="note"><b>一句話先記住：</b>VR 問的是「我要造一個什麼世界」；MR 問的是「這個世界原本長什麼樣，我要往裡面加什麼」。
+    <span class="en"><b>One line to remember:</b> VR asks "what world shall I build?" MR asks "what does this world already look like, and what am I adding to it?"</span></div>
+</section>
+
+<!-- ============ 1.3.1 (1/2) ============ -->
+<section class="slide" data-toc="1.3.1 名稱定義 Definitions (1/2)" data-n="1.3.1">
+  <div class="eyebrow"><span class="num">1.3.1</span><span class="kicker">Definitions</span><span class="part">1 / 2</span></div>
+  <h2 class="title">名稱定義：一條光譜，四個名詞<span class="en">One continuum, four terms</span></h2>
+  <p class="lead">Milgram 與 Kishino（1994）提出「真實—虛擬連續體」。所有名詞都是這條線上的位置，不是彼此對立的技術。
+    <span class="en">Milgram and Kishino (1994) proposed the Reality–Virtuality Continuum. Every one of these terms is a <em>position on that line</em>, not a technology opposed to the others.</span></p>
+
+  <div class="fig">
+    <svg viewBox="0 0 720 206" role="img" aria-label="真實—虛擬連續光譜，標示 Real、AR、MR、VR 的位置">
+      <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="var(--mr)"/><stop offset="1" stop-color="var(--vr)"/></linearGradient></defs>
+      <text x="40" y="26" font-size="11.5" fill="var(--mr)" font-family="Noto Sans TC,sans-serif" font-weight="700">真實環境</text>
+      <text x="40" y="39" font-size="10" fill="var(--mr)" font-family="Archivo,sans-serif">Real Environment</text>
+      <text x="680" y="26" text-anchor="end" font-size="11.5" fill="var(--vr)" font-family="Noto Sans TC,sans-serif" font-weight="700">全虛擬環境</text>
+      <text x="680" y="39" text-anchor="end" font-size="10" fill="var(--vr)" font-family="Archivo,sans-serif">Virtual Environment</text>
+      <rect x="40" y="52" width="640" height="12" rx="6" fill="url(#g1)"/>
+      <circle cx="40" cy="58" r="7" fill="var(--surface)" stroke="var(--mr)" stroke-width="2.5"/>
+      <circle cx="250" cy="58" r="7" fill="var(--surface)" stroke="var(--mr)" stroke-width="2.5"/>
+      <circle cx="455" cy="58" r="9" fill="var(--mr)" stroke="var(--surface)" stroke-width="2.5"/>
+      <circle cx="680" cy="58" r="7" fill="var(--surface)" stroke="var(--vr)" stroke-width="2.5"/>
+      <g font-family="Noto Sans TC,sans-serif" font-size="12.5" fill="var(--ink)" text-anchor="middle">
+        <text x="40" y="88" font-weight="700">Real</text>
+        <text x="250" y="88" font-weight="700">AR</text>
+        <text x="455" y="88" font-weight="900" fill="var(--mr)">MR ← 本課程</text>
+        <text x="680" y="88" font-weight="700">VR</text>
+      </g>
+      <g font-family="Noto Sans TC,sans-serif" font-size="10.5" fill="var(--ink-3)" text-anchor="middle">
+        <text x="40" y="106">肉眼所見</text><text x="40" y="119" font-family="Archivo,sans-serif">Naked eye</text>
+        <text x="250" y="106">疊加資訊・虛實不互動</text><text x="250" y="119" font-family="Archivo,sans-serif">Overlay, no interaction</text>
+        <text x="455" y="106">虛實互相認得・有空間幾何</text><text x="455" y="119" font-family="Archivo,sans-serif">Mutually aware, has geometry</text>
+        <text x="680" y="106">真實被遮蔽</text><text x="680" y="119" font-family="Archivo,sans-serif">Reality occluded</text>
+      </g>
+      <rect x="24" y="142" width="672" height="48" rx="8" fill="none" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="5 4"/>
+      <text x="360" y="164" text-anchor="middle" font-size="12.5" font-family="Noto Sans TC,sans-serif" fill="var(--ink-2)">XR（Extended Reality）＝整條光譜的統稱，是傘狀名詞，不是某一種技術</text>
+      <text x="360" y="180" text-anchor="middle" font-size="10.5" font-family="Archivo,sans-serif" fill="var(--ink-3)">XR is an umbrella term covering the whole continuum — not a technology of its own</text>
+    </svg>
+    <p class="figcap">圖 1.3.1｜XR 是集合名詞；AR 與 MR 的分界點在於「虛擬物件是否取得並使用真實世界的幾何資料」。
+      <span class="en">Fig. 1.3.1｜XR is a collective noun. The line between AR and MR is whether the virtual object obtains and uses real-world geometry.</span></p>
+  </div>
+</section>
+
+<!-- ============ 1.3.1 (2/2) ============ -->
+<section class="slide" data-toc="1.3.1 名稱定義 Definitions (2/2)" data-n="1.3.1">
+  <div class="eyebrow"><span class="num">1.3.1</span><span class="kicker">Definitions</span><span class="part">2 / 2</span></div>
+  <h2 class="title">四個名詞的判準<span class="en">A one-line test for each term</span></h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>名詞<span class="en">Term</span></th><th>全名<span class="en">Full name</span></th><th>判準（一句話）<span class="en">Test, in one line</span></th><th>典型例子<span class="en">Typical example</span></th></tr></thead>
+      <tbody>
+        <tr><td class="mono"><strong>VR</strong></td><td>Virtual Reality<span class="en">虛擬實境</span></td>
+          <td>真實環境<strong>被完全取代</strong>，使用者看不到現實<span class="en">Reality is fully replaced; the user cannot see the real world</span></td>
+          <td>Beat Saber、VRChat</td></tr>
+        <tr><td class="mono"><strong>AR</strong></td><td>Augmented Reality<span class="en">擴增實境</span></td>
+          <td>資訊<strong>疊加</strong>在真實影像上，多半不理解空間結構<span class="en">Information is overlaid on a real image, usually with no understanding of spatial structure</span></td>
+          <td>Pokémon GO、IG 濾鏡</td></tr>
+        <tr><td class="mono" style="color:var(--mr)"><strong>MR</strong></td><td>Mixed Reality<span class="en">混合實境</span></td>
+          <td>虛擬物件<strong>取得真實幾何</strong>，能碰撞、遮蔽、被真實空間約束<span class="en">Virtual objects obtain real geometry — they collide, occlude, and are constrained by the real space</span></td>
+          <td>First Encounters<span class="en">本課程漆彈專題</span></td></tr>
+        <tr><td class="mono"><strong>XR</strong></td><td>Extended Reality<span class="en">延展實境</span></td>
+          <td><strong>統稱</strong>，涵蓋上述全部<span class="en">An umbrella term covering all of the above</span></td>
+          <td>本課程名稱使用的層級<span class="en">The level used in this course title</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>常見誤用：</b>把「有彩色透視畫面」就叫做 MR。只有透視、虛擬物件卻懸空穿牆的，本質上仍是 AR。<strong>有沒有空間幾何，才是 MR 的分水嶺。</strong>
+    <span class="en"><b>A common misuse:</b> calling anything with colour passthrough "MR". If the passthrough is there but virtual objects float and clip through walls, it is still AR. <strong>Spatial geometry is the dividing line.</strong></span></div>
+</section>
+
+<!-- ============ 1.3.2 (1/2) ============ -->
+<section class="slide" data-toc="1.3.2 技術面 Technical (1/2)" data-n="1.3.2">
+  <div class="eyebrow"><span class="num">1.3.2</span><span class="kicker">Technical</span><span class="part">1 / 2</span></div>
+  <h2 class="title">技術面：多了三條資料流<span class="en">Technically, MR adds three data streams</span></h2>
+  <p class="lead">VR 的畫面只有一個來源：Unity 渲染結果。MR 的畫面是「真實影像 ＋ 空間資料 ＋ 虛擬渲染」三者合成。
+    <span class="en">A VR frame has a single source: Unity's render. An MR frame is a composite of real imagery, spatial data and the virtual render.</span></p>
+
+  <div class="fig">
+    <svg viewBox="0 0 720 268" role="img" aria-label="VR 與 MR 的渲染管線比較圖">
+      <defs>
+        <marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--vr)"/></marker>
+        <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--mr)"/></marker>
+      </defs>
+      <g font-family="Noto Sans TC,sans-serif" font-size="11.5">
+        <text x="10" y="20" font-size="11.5" font-weight="700" fill="var(--vr)" font-family="IBM Plex Mono,monospace">VR PIPELINE</text>
+        <rect x="10" y="30" width="150" height="46" rx="8" fill="var(--vr-soft)" stroke="var(--vr)"/>
+        <text x="85" y="52" text-anchor="middle" fill="var(--ink)">Unity 場景渲染</text>
+        <text x="85" y="66" text-anchor="middle" fill="var(--ink-3)" font-size="9.5" font-family="Archivo,sans-serif">Unity scene render</text>
+        <path d="M168 53 H206" stroke="var(--vr)" stroke-width="2" marker-end="url(#a1)"/>
+        <rect x="212" y="30" width="150" height="46" rx="8" fill="var(--vr-soft)" stroke="var(--vr)"/>
+        <text x="287" y="52" text-anchor="middle" fill="var(--ink)">頭盔顯示</text>
+        <text x="287" y="66" text-anchor="middle" fill="var(--ink-3)" font-size="9.5" font-family="Archivo,sans-serif">Headset display</text>
+        <text x="380" y="48" font-size="10.5" fill="var(--ink-3)">頭盔鏡頭僅用於 6DoF 定位 / Cameras used for tracking only</text>
+        <text x="380" y="64" font-size="10.5" fill="var(--ink-3)">畫面完全由引擎產生 / Every pixel comes from the engine</text>
+      </g>
+      <line x1="10" y1="94" x2="710" y2="94" stroke="var(--line)" stroke-dasharray="4 4"/>
+      <g font-family="Noto Sans TC,sans-serif" font-size="11.5">
+        <text x="10" y="118" font-size="11.5" font-weight="700" fill="var(--mr)" font-family="IBM Plex Mono,monospace">MR PIPELINE</text>
+        <rect x="10" y="128" width="152" height="38" rx="8" fill="var(--mr-soft)" stroke="var(--mr)"/>
+        <text x="86" y="146" text-anchor="middle" fill="var(--ink)">Passthrough 透視影像</text>
+        <text x="86" y="159" text-anchor="middle" fill="var(--ink-3)" font-size="9.5" font-family="Archivo,sans-serif">Colour camera feed</text>
+        <rect x="10" y="174" width="152" height="38" rx="8" fill="var(--mr-soft)" stroke="var(--mr)"/>
+        <text x="86" y="192" text-anchor="middle" fill="var(--ink)">Scene / MRUK</text>
+        <text x="86" y="205" text-anchor="middle" fill="var(--ink-3)" font-size="9.5" font-family="Archivo,sans-serif">Wall / floor / furniture anchors</text>
+        <rect x="10" y="220" width="152" height="38" rx="8" fill="var(--mr-soft)" stroke="var(--mr)"/>
+        <text x="86" y="238" text-anchor="middle" fill="var(--ink)">Depth API 深度圖</text>
+        <text x="86" y="251" text-anchor="middle" fill="var(--ink-3)" font-size="9.5" font-family="Archivo,sans-serif">Per-pixel depth map</text>
+        <path d="M168 147 H204" stroke="var(--mr)" stroke-width="2" marker-end="url(#a2)"/>
+        <path d="M168 193 H204" stroke="var(--mr)" stroke-width="2" marker-end="url(#a2)"/>
+        <path d="M168 239 H204" stroke="var(--mr)" stroke-width="2" marker-end="url(#a2)"/>
+        <rect x="210" y="128" width="152" height="130" rx="10" fill="var(--surface-2)" stroke="var(--mr)" stroke-width="1.6"/>
+        <text x="286" y="182" text-anchor="middle" fill="var(--ink)" font-weight="700">合成 Composite</text>
+        <text x="286" y="198" text-anchor="middle" fill="var(--ink-3)" font-size="9.5" font-family="Archivo,sans-serif">Occlusion · collision · alignment</text>
+        <path d="M368 193 H406" stroke="var(--mr)" stroke-width="2" marker-end="url(#a2)"/>
+        <rect x="412" y="170" width="146" height="46" rx="8" fill="var(--mr-soft)" stroke="var(--mr)"/>
+        <text x="485" y="192" text-anchor="middle" fill="var(--ink)">頭盔顯示</text>
+        <text x="485" y="206" text-anchor="middle" fill="var(--ink-3)" font-size="9.5" font-family="Archivo,sans-serif">Headset display</text>
+        <text x="574" y="176" font-size="10.5" fill="var(--ink-3)">三條資料流都要 Vulkan</text>
+        <text x="574" y="191" font-size="10.5" fill="var(--ink-3)">＋ Multiview 才能開啟</text>
+        <text x="574" y="208" font-size="9.5" fill="var(--ink-3)" font-family="Archivo,sans-serif">All three require Vulkan</text>
+        <text x="574" y="221" font-size="9.5" fill="var(--ink-3)" font-family="Archivo,sans-serif">and Multiview to be enabled</text>
+      </g>
+    </svg>
+    <p class="figcap">圖 1.3.2｜MR 多出來的 Passthrough、Scene、Depth 三條資料流，正是本課程第 2～3 週與第 13 週的教學主體。
+      <span class="en">Fig. 1.3.2｜The three extra streams — Passthrough, Scene and Depth — are exactly what weeks 2–3 and week 13 of this course are about.</span></p>
+  </div>
+</section>
+
+<!-- ============ 1.3.2 (2/2) ============ -->
+<section class="slide" data-toc="1.3.2 技術面 Technical (2/2)" data-n="1.3.2">
+  <div class="eyebrow"><span class="num">1.3.2</span><span class="kicker">Technical</span><span class="part">2 / 2</span></div>
+  <h2 class="title">七項技術對照<span class="en">Seven technical points, side by side</span></h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>技術項目<span class="en">Item</span></th><th>VR</th><th>MR（Quest 3）</th></tr></thead>
+      <tbody>
+        <tr><td><strong>畫面來源</strong><span class="en">Frame source</span></td>
+          <td>100% 引擎渲染<span class="en">100% engine-rendered</span></td>
+          <td>透視影像 ＋ 引擎渲染合成<span class="en">Camera feed composited with the engine render</span></td></tr>
+        <tr><td><strong>空間資料</strong><span class="en">Spatial data</span></td>
+          <td>不需要，場景自己畫<span class="en">Not required — you author the scene</span></td>
+          <td>必須先在頭盔完成 <strong>Space Setup</strong> 掃描<span class="en">Space Setup must be scanned on the headset first</span></td></tr>
+        <tr><td><strong>關鍵 SDK</strong><span class="en">Key SDKs</span></td>
+          <td>OpenXR ＋ 任一 Interaction 套件<span class="en">OpenXR plus any interaction package</span></td>
+          <td>OpenXR ＋ Meta XR Feature ＋ <strong>MRUK</strong> ＋ <strong>Depth API</strong></td></tr>
+        <tr><td><strong>Graphics API</strong></td>
+          <td>Vulkan / OpenGLES3 皆可<span class="en">Either is acceptable</span></td>
+          <td><strong>Vulkan 唯一</strong><span class="en">Vulkan only — required by Depth API and Multiview</span></td></tr>
+        <tr><td><strong>相機設定</strong><span class="en">Camera setup</span></td>
+          <td>Skybox 正常使用<span class="en">Skybox used normally</span></td>
+          <td>Skybox 設為 <code>None</code>，<code>Clear Flags = Solid Color</code>，背景 <strong>RGBA 全 0</strong><span class="en">Skybox set to None; clear to a solid colour with all RGBA channels at zero</span></td></tr>
+        <tr><td><strong>資料載入時機</strong><span class="en">Data availability</span></td>
+          <td>場景載入即完成<span class="en">Ready as soon as the scene loads</span></td>
+          <td>Scene 資料<strong>非同步</strong>載入，需掛 <code>SceneLoadedEvent</code><span class="en">Scene data loads asynchronously — subscribe to SceneLoadedEvent</span></td></tr>
+        <tr><td><strong>模擬器可測性</strong><span class="en">Testability in editor</span></td>
+          <td>高，編輯器即可驗證<span class="en">High — verifiable in the editor</span></td>
+          <td>低，多數功能<strong>必須 Build 上機</strong><span class="en">Low — most features must be built and run on the device</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>第一個必踩的坑：</b>在 <code>Start()</code> 直接呼叫 <code>MRUK.Instance.GetCurrentRoom()</code> 一定拿到 <code>null</code>——房間資料是非同步載入的。第 3 週會完整示範正確寫法。
+    <span class="en"><b>The first pitfall everyone hits:</b> calling <code>MRUK.Instance.GetCurrentRoom()</code> directly in <code>Start()</code> always returns <code>null</code>, because room data loads asynchronously. Week 3 demonstrates the correct pattern in full.</span></div>
+</section>
+
+<!-- ============ 1.3.3 (1/2) ============ -->
+<section class="slide" data-toc="1.3.3 執行效果 Experience (1/2)" data-n="1.3.3">
+  <div class="eyebrow"><span class="num">1.3.3</span><span class="kicker">Experience</span><span class="part">1 / 2</span></div>
+  <h2 class="title">執行效果：使用者實際感受到什麼<span class="en">What the user actually sees and feels</span></h2>
+
+  <div class="fig">
+    <svg viewBox="0 0 720 212" role="img" aria-label="VR 與 MR 的使用者視野比較">
+      <rect x="8" y="10" width="336" height="190" rx="12" fill="var(--vr)" opacity=".12"/>
+      <rect x="8" y="10" width="336" height="190" rx="12" fill="none" stroke="var(--vr)" stroke-width="1.5"/>
+      <text x="24" y="34" font-family="IBM Plex Mono,monospace" font-size="11.5" font-weight="600" fill="var(--vr)">VR VIEW</text>
+      <path d="M40 162 L110 98 L240 98 L312 162 Z" fill="var(--vr)" opacity=".3"/>
+      <rect x="120" y="62" width="52" height="52" rx="6" fill="var(--vr)" opacity=".8"/>
+      <circle cx="240" cy="80" r="20" fill="var(--vr)" opacity=".6"/>
+      <text x="176" y="182" text-anchor="middle" font-family="Noto Sans TC,sans-serif" font-size="11" fill="var(--ink-2)">虛擬場景包覆全視野・看不到教室</text>
+      <text x="176" y="195" text-anchor="middle" font-family="Archivo,sans-serif" font-size="9.5" fill="var(--ink-3)">Virtual scene fills the view; the classroom is gone</text>
+
+      <rect x="376" y="10" width="336" height="190" rx="12" fill="var(--surface-2)"/>
+      <rect x="376" y="10" width="336" height="190" rx="12" fill="none" stroke="var(--mr)" stroke-width="1.5"/>
+      <text x="392" y="34" font-family="IBM Plex Mono,monospace" font-size="11.5" font-weight="600" fill="var(--mr)">MR VIEW</text>
+      <path d="M400 170 L400 56 L544 48 L688 56 L688 170 Z" fill="none" stroke="var(--ink-3)" stroke-width="1.4"/>
+      <path d="M400 170 L688 170" stroke="var(--ink-3)" stroke-width="1.4"/>
+      <rect x="596" y="120" width="74" height="42" rx="4" fill="none" stroke="var(--ink-3)" stroke-width="1.2"/>
+      <text x="633" y="142" text-anchor="middle" font-size="9.5" fill="var(--ink-3)" font-family="Noto Sans TC,sans-serif">真實桌子</text>
+      <text x="633" y="154" text-anchor="middle" font-size="8.5" fill="var(--ink-3)" font-family="Archivo,sans-serif">real desk</text>
+      <circle cx="450" cy="88" r="11" fill="var(--mr)"/>
+      <circle cx="486" cy="106" r="7" fill="var(--mr)" opacity=".8"/>
+      <circle cx="466" cy="122" r="5" fill="var(--mr)" opacity=".6"/>
+      <circle cx="520" cy="74" r="6" fill="var(--mr)" opacity=".7"/>
+      <path d="M556 170 q26 -16 52 0" fill="none" stroke="var(--mr)" stroke-width="2" stroke-dasharray="5 4"/>
+      <rect x="554" y="154" width="20" height="12" rx="3" fill="var(--mr)"/>
+      <text x="544" y="182" text-anchor="middle" font-family="Noto Sans TC,sans-serif" font-size="11" fill="var(--ink-2)">漆點貼在真實牆上・小車繞過真實桌腳</text>
+      <text x="544" y="195" text-anchor="middle" font-family="Archivo,sans-serif" font-size="9.5" fill="var(--ink-3)">Splats stick to your wall; the car drives around a real desk</text>
+    </svg>
+    <p class="figcap">圖 1.3.3｜同一間 EB101，VR 讓你離開它，MR 讓它變成關卡。
+      <span class="en">Fig. 1.3.3｜Same classroom, EB101. VR takes you out of it; MR turns it into the level.</span></p>
+  </div>
+</section>
+
+<!-- ============ 1.3.3 (2/2) ============ -->
+<section class="slide" data-toc="1.3.3 執行效果 Experience (2/2)" data-n="1.3.3">
+  <div class="eyebrow"><span class="num">1.3.3</span><span class="kicker">Experience</span><span class="part">2 / 2</span></div>
+  <h2 class="title">兩種體驗的特徵<span class="en">Characteristics of each experience</span></h2>
+  <div class="grid2">
+    <div class="card vrcard">
+      <div class="tag vr">VR</div>
+      <h3 class="sec" style="margin-top:6px"><span>執行效果特徵<span class="en">What VR gives you</span></span></h3>
+      <ul>
+        <li><strong>沉浸感高</strong>，世界觀完全可控<span class="en">High immersion; total control over the world you present</span></li>
+        <li>場景可任意大小，不受房間限制<span class="en">Scene size is unlimited — the real room does not constrain it</span></li>
+        <li>需<strong>護欄（Guardian）</strong>防撞，活動範圍受限<span class="en">A Guardian boundary is needed; physical movement is restricted</span></li>
+        <li>移動方式易造成<strong>暈動症</strong><span class="en">Artificial locomotion readily causes motion sickness</span></li>
+        <li>多人同場＝共享同一個虛擬場景<span class="en">Multiplayer means everyone shares one virtual scene</span></li>
+      </ul>
+    </div>
+    <div class="card mrcard">
+      <div class="tag mr">MR</div>
+      <h3 class="sec" style="margin-top:6px"><span>執行效果特徵<span class="en">What MR gives you</span></span></h3>
+      <ul>
+        <li><strong>安全感高</strong>，看得到家具與同學，可站著走動<span class="en">Safer — you can see furniture and classmates, and walk around</span></li>
+        <li>場景大小＝你的房間大小，<strong>每個玩家的關卡都不同</strong><span class="en">The level is the size of your room — every player's level is different</span></li>
+        <li>暈動症大幅降低（視覺與體感一致）<span class="en">Motion sickness drops sharply; vision and proprioception agree</span></li>
+        <li>虛擬物件<strong>對齊失準</strong>會立刻被察覺<span class="en">Any misalignment — clipping, floating — is instantly noticed</span></li>
+        <li>受真實光線、材質、掃描品質影響，<strong>可控性低</strong><span class="en">Real lighting, materials and scan quality all intrude; less controllable</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><b>教室實務提醒：</b>MR 的關卡是「掃描出來的」。EB101 每一台頭盔都要各自做一次 Space Setup，而且<strong>桌椅移動後掃描資料就會失準</strong>。第 3 週會預留掃描時間。
+    <span class="en"><b>Classroom reality:</b> an MR level is <em>scanned</em>, not authored. Every headset in EB101 must run its own Space Setup, and the scan goes stale as soon as the desks are moved. Week 3 reserves lab time for this.</span></div>
+</section>
+
+<!-- ============ 1.3.4 (1/2) ============ -->
+<section class="slide" data-toc="1.3.4 硬體設備 Hardware (1/2)" data-n="1.3.4">
+  <div class="eyebrow"><span class="num">1.3.4</span><span class="kicker">Hardware</span><span class="part">1 / 2</span></div>
+  <h2 class="title">硬體設備：規格決定你能做什麼<span class="en">Specs decide what you can build</span></h2>
+  <p class="lead">「這個功能做不出來」有時不是程式問題，是<strong>硬體沒有那顆感測器</strong>。開發前先確認規格，是 XR 工程師的基本功。
+    <span class="en">"It can't be done" is sometimes not a coding problem — the headset simply does not have that sensor. Reading the spec sheet before choosing a technique is basic XR engineering practice.</span></p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>能力<span class="en">Capability</span></th><th>Quest 3<span class="en">本課程用機 / our headset</span></th><th>Quest 3S</th><th>Quest Pro</th><th>Vision Pro</th></tr></thead>
+      <tbody>
+        <tr><td><strong>彩色透視</strong><span class="en">Colour passthrough</span></td><td style="color:var(--ok)">✔ 高解析</td><td style="color:var(--ok)">✔</td><td>△ 解析度較低</td><td style="color:var(--ok)">✔ 最高解析</td></tr>
+        <tr><td><strong>深度感測器</strong><span class="en">Depth sensor</span></td><td style="color:var(--ok)">✔ 有</td><td style="color:var(--warn)">✘ 無</td><td style="color:var(--warn)">✘ 無</td><td style="color:var(--ok)">✔ LiDAR</td></tr>
+        <tr><td><strong>空間掃描</strong><span class="en">Scene / room setup</span></td><td style="color:var(--ok)">✔</td><td style="color:var(--ok)">✔</td><td style="color:var(--ok)">✔</td><td style="color:var(--ok)">✔ 自動</td></tr>
+        <tr><td><strong>眼動追蹤</strong><span class="en">Eye tracking</span></td><td style="color:var(--warn)"><strong>✘ 無</strong></td><td style="color:var(--warn)">✘ 無</td><td style="color:var(--ok)">✔ 有</td><td style="color:var(--ok)">✔ 主要輸入</td></tr>
+        <tr><td><strong>手部追蹤</strong><span class="en">Hand tracking</span></td><td style="color:var(--ok)">✔</td><td style="color:var(--ok)">✔</td><td style="color:var(--ok)">✔</td><td style="color:var(--ok)">✔</td></tr>
+        <tr><td><strong>鏡片</strong><span class="en">Lenses</span></td><td>Pancake</td><td>Fresnel</td><td>Pancake</td><td>Pancake</td></tr>
+        <tr><td><strong>開發生態</strong><span class="en">Dev stack</span></td><td>Unity ＋ Meta XR SDK</td><td>同左<span class="en">same</span></td><td>同左<span class="en">same</span></td><td>visionOS / PolySpatial</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 1.3.4 (2/2) ============ -->
+<section class="slide" data-toc="1.3.4 硬體設備 Hardware (2/2)" data-n="1.3.4">
+  <div class="eyebrow"><span class="num">1.3.4</span><span class="kicker">Hardware</span><span class="part">2 / 2</span></div>
+  <h2 class="title">從規格表讀出兩個結論<span class="en">Two conclusions to draw from that table</span></h2>
+
+  <div class="note"><b>① 本學期最重要的一則硬體事實：</b>Quest 3 <strong>沒有眼動追蹤硬體</strong>。因此第 10～14 週的「引導賽車」主題，實作的是 <strong>Head Gaze（頭部朝向射線，<code>CenterEyeAnchor.forward</code>）</strong>，不是 Eye Gaze。看到網路教學寫「視線引導」時，請先確認它用的是哪一台頭盔。
+    <span class="en"><b>① The single most important hardware fact this semester:</b> the Quest 3 has <strong>no eye-tracking hardware</strong>. The guided-racing theme in weeks 10–14 therefore implements <strong>head gaze</strong> — a ray along <code>CenterEyeAnchor.forward</code> — not eye gaze. Whenever an online tutorial says "gaze control", check which headset it was written for.</span></div>
+
+  <div class="good"><b>② 推論練習：</b>Quest 3S 沒有深度感測器 → 第 13 週的 Depth API 環境遮蔽在 3S 上效果會明顯打折。這就是「先讀規格表再選技術路線」的實例。
+    <span class="en"><b>② An inference exercise:</b> the Quest 3S has no depth sensor, so the Depth API occlusion taught in week 13 will be noticeably degraded on it. This is what "read the spec sheet before choosing your technical route" looks like in practice.</span></div>
+
+  <div class="flat">
+    <h3 class="sec"><span>課堂小測（下週討論）<span class="en">Quick check — we discuss this next week</span></span></h3>
+    <ul>
+      <li>若客戶指定用 Quest 3S 做一個「虛擬寵物會躲到沙發後面」的 App，你會怎麼回覆？
+        <span class="en">If a client asks for a Quest 3S app where a virtual pet hides behind the sofa, how would you answer?</span></li>
+      <li>哪些互動設計在沒有眼動追蹤的前提下仍然成立？
+        <span class="en">Which interaction designs still hold up without eye tracking?</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 1.3.5 (1/2) ============ -->
+<section class="slide" data-toc="1.3.5 影片觀摩 Watch (1/2)" data-n="1.3.5">
+  <div class="eyebrow"><span class="num">1.3.5</span><span class="kicker">Watch</span><span class="part">1 / 2</span></div>
+  <h2 class="title">影片觀摩：三支必看<span class="en">Three videos to watch, in order</span></h2>
+  <p class="lead">依序看，觀念會從「名詞」走到「硬體」再走到「實際玩起來的樣子」。點擊卡片開新分頁。
+    <span class="en">Watch them in order: the ideas move from terminology, to hardware, to what it actually feels like to play. Each card opens in a new tab.</span></p>
+
+  <div class="vidlist">
+    <a class="vid" href="https://www.youtube.com/watch?v=NEasf4Q0xDA" target="_blank" rel="noopener">
+      <span class="play" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 14 14"><path d="M3 1 L12 7 L3 13 Z" fill="var(--mr)"/></svg></span>
+      <span><h4>① 【AR、VR、MR 哪裡不一樣？】跨出虛擬走入現實<span class="en">A Mandarin explainer on how AR, VR and MR differ</span></h4>
+      <p>中文科普 · 對應 1.3.1 名稱定義<span class="en">Popular science, in Chinese · pairs with §1.3.1</span></p>
+      <span class="why">看重點：三個名詞的分界線各畫在哪裡，回來對照圖 1.3.1 的光譜。
+        <span class="en">Watch for: where each boundary is drawn — then compare it against the continuum in Fig. 1.3.1.</span></span></span>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=Exu7r2vZpcw" target="_blank" rel="noopener">
+      <span class="play" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 14 14"><path d="M3 1 L12 7 L3 13 Z" fill="var(--mr)"/></svg></span>
+      <span><h4>② This is Meta Quest 3（Meta 官方）<span class="en">Meta's official hardware announcement</span></h4>
+      <p>官方硬體發表影片 · 對應 1.3.4 硬體設備<span class="en">Official launch video · pairs with §1.3.4</span></p>
+      <span class="why">看重點：官方如何定位「彩色透視」與「空間理解」，這正是本課程的技術主軸。
+        <span class="en">Watch for: how Meta frames colour passthrough and spatial understanding — the two technical pillars of this course.</span></span></span>
+    </a>
+    <a class="vid" href="https://www.youtube.com/watch?v=wiT_b4m8a24" target="_blank" rel="noopener">
+      <span class="play" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 14 14"><path d="M3 1 L12 7 L3 13 Z" fill="var(--mr)"/></svg></span>
+      <span><h4>③ Meta Quest 3 — First Encounters 混合實境實機遊玩<span class="en">First Encounters — mixed-reality gameplay on Quest 3</span></h4>
+      <p>Meta 第一方 MR 作品 · 對應 1.3.3 執行效果<span class="en">A Meta first-party MR title · pairs with §1.3.3</span></p>
+      <span class="why">看重點：發射器打破<strong>真實牆面</strong>、噴出彩色物質、生物跳上<strong>真實沙發</strong>——這就是 MRUK 空間幾何＋射線碰撞＋表面貼圖的成品樣貌，與本課程主題一機制幾乎相同。
+        <span class="en">Watch for: the blaster breaking through <em>your real wall</em>, colour spraying across the surface, creatures landing on <em>your real sofa</em>. That is MRUK geometry plus raycasting plus surface decals — almost exactly the mechanics of Theme 1 in this course.</span></span></span>
+    </a>
+  </div>
+</section>
+
+<!-- ============ 1.3.5 (2/2) ============ -->
+<section class="slide" data-toc="1.3.5 影片觀摩 Watch (2/2)" data-n="1.3.5">
+  <div class="eyebrow"><span class="num">1.3.5</span><span class="kicker">Watch</span><span class="part">2 / 2</span></div>
+  <h2 class="title">關於「Meta 官方漆彈射擊展示影片」<span class="en">On the question of an official Meta paintball demo</span></h2>
+
+  <div class="note"><b>查證結果：</b>Meta 目前<strong>並未</strong>發表以「漆彈（Paintball）」為名的官方 MR 遊戲展示影片。第一方作品中機制最接近的是上一頁第 ③ 支的 <strong>First Encounters</strong>——同樣是「射擊 → 命中真實牆面 → 在表面留下彩色痕跡 → 打破牆面」的流程，可直接當作主題一的目標參考。
+    <span class="en"><b>What the search found:</b> Meta has <strong>not</strong> published an official MR demo under the name "paintball". The closest first-party match is <strong>First Encounters</strong> (video ③ on the previous page): shoot → hit a real wall → leave coloured marks on the surface → break through it. Treat it as the reference target for Theme 1.</span></div>
+
+  <div class="vidlist">
+    <a class="vid" href="https://www.youtube.com/watch?v=vSZQA4Bl5GA" target="_blank" rel="noopener">
+      <span class="play" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 14 14"><path d="M3 1 L12 7 L3 13 Z" fill="var(--mr)"/></svg></span>
+      <span><h4>④ 補充：Paintball Playground on Meta Quest 3（第三方）<span class="en">Supplementary: Paintball Playground, a third-party title</span></h4>
+      <p>商店上架的漆彈遊戲實測 · 注意：這是 <strong>VR</strong> 漆彈，不是 MR<span class="en">A store-released paintball game — note that it is <strong>VR</strong>, not MR</span></p>
+      <span class="why">看重點：漆點命中後的<strong>貼圖表現、彈道、連射手感</strong>值得參考；但它的牆面是虛擬建模的——想想若要改成 MR，第 4～5 週的射線與法向量對齊該怎麼接上去。
+        <span class="en">Watch for: the splat decals, ballistic arc and rapid-fire feel are all worth studying. But its walls are modelled geometry — ask yourself how the raycasting and normal alignment of weeks 4–5 would have to be wired in to make it MR.</span></span></span>
+    </a>
+  </div>
+
+  <div class="good"><b>本週筆記作業：</b>三支必看影片各寫 2～3 句觀察，下週課堂討論。
+    <span class="en"><b>This week's note-taking task:</b> write two or three sentences of observation on each of the three required videos; we discuss them next week.</span></div>
+</section>
+
+<!-- ============ 1.4 (1/2) ============ -->
+<section class="slide" data-toc="1.4 課程綱要 Syllabus (1/2)" data-n="1.4">
+  <div class="eyebrow"><span class="num">1.4</span><span class="kicker">Syllabus</span><span class="part">1 / 2</span></div>
+  <h2 class="title">課程綱要：18 週四個階段<span class="en">Eighteen weeks in four phases</span></h2>
+  <p class="lead">前 3 週打地基，中間兩個主題各約 6 週，最後 4 週整合發表。
+    <span class="en">Three weeks of foundations, two themes of roughly six weeks each, then four weeks of integration and presentation.</span></p>
+
+  <div class="fig">
+    <svg viewBox="0 0 720 100" role="img" aria-label="18週四階段時間軸">
+      <g font-family="Noto Sans TC,sans-serif" font-size="11.5" text-anchor="middle">
+        <text x="63" y="18" font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--mr)">↑ 你在這裡 / you are here</text>
+        <rect x="8" y="30" width="110" height="32" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+        <text x="63" y="51" fill="var(--ink-2)">基礎建置</text>
+        <text x="63" y="76" font-family="IBM Plex Mono,monospace" font-size="10.5" fill="var(--ink-3)">W1–W3</text>
+        <text x="63" y="90" font-family="Archivo,sans-serif" font-size="9.5" fill="var(--ink-3)">Foundations</text>
+        <rect x="126" y="30" width="228" height="32" rx="6" fill="var(--mr-soft)" stroke="var(--mr)"/>
+        <text x="240" y="51" fill="var(--mr)" font-weight="700">主題一：MR 漆彈射擊</text>
+        <text x="240" y="76" font-family="IBM Plex Mono,monospace" font-size="10.5" fill="var(--ink-3)">W4–W9</text>
+        <text x="240" y="90" font-family="Archivo,sans-serif" font-size="9.5" fill="var(--ink-3)">Theme 1 · MR Paintball</text>
+        <rect x="362" y="30" width="196" height="32" rx="6" fill="var(--vr-soft)" stroke="var(--vr)"/>
+        <text x="460" y="51" fill="var(--vr)" font-weight="700">主題二：引導賽車</text>
+        <text x="460" y="76" font-family="IBM Plex Mono,monospace" font-size="10.5" fill="var(--ink-3)">W10–W14</text>
+        <text x="460" y="90" font-family="Archivo,sans-serif" font-size="9.5" fill="var(--ink-3)">Theme 2 · Guided Racing</text>
+        <rect x="566" y="30" width="146" height="32" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+        <text x="639" y="51" fill="var(--ink-2)">整合與發表</text>
+        <text x="639" y="76" font-family="IBM Plex Mono,monospace" font-size="10.5" fill="var(--ink-3)">W15–W18</text>
+        <text x="639" y="90" font-family="Archivo,sans-serif" font-size="9.5" fill="var(--ink-3)">Integration</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th class="wk">週次<span class="en">Week</span></th><th>教學內容<span class="en">Content</span></th></tr></thead>
+      <tbody>
+        <tr><td class="wk">W1</td><td><strong>課程導論：MR 混合實境趨勢與 Quest 3 開發環境建置</strong>（本單元）<span class="en">Course introduction: MR trends and Quest 3 environment setup (this unit)</span></td></tr>
+        <tr><td class="wk">W2</td><td>Passthrough 透視基礎：Meta XR SDK 與 Building Blocks 配置<span class="en">Passthrough basics: Meta XR SDK and Building Blocks configuration</span></td></tr>
+        <tr><td class="wk">W3</td><td>空間運算奠基：MRUK 空間網格抓取（含全班 Space Setup 掃描）<span class="en">Spatial computing foundations: scene-mesh querying via MRUK, plus class-wide Space Setup</span></td></tr>
+        <tr><td class="wk">W4</td><td style="color:var(--mr)"><strong>【主題一：漆彈射擊】</strong>射線碰撞與現實牆面互動<span class="en"><strong>[Theme 1: Paintball]</strong> Raycast collisions and real-wall interaction</span></td></tr>
+        <tr><td class="wk">W5</td><td>動態表面貼圖：URP Decal 系統與法向量對齊演算法<span class="en">Dynamic surface painting: the URP Decal system and normal-alignment algorithm</span></td></tr>
+        <tr><td class="wk">W6</td><td>記憶體優化管理：大量漆彈連續發射與物件池實作<span class="en">Memory optimisation: rapid fire and object-pool implementation</span></td></tr>
+        <tr><td class="wk">W7</td><td>漆彈遊戲邏輯整合：虛擬槍枝抓取機制與彈藥 UI 介面設計<span class="en">Gameplay integration: virtual gun grabbing and ammo UI design</span></td></tr>
+        <tr><td class="wk">W8</td><td>期中專案優化與除錯：音效、粒子特效與場景碰撞調校<span class="en">Midterm optimisation and debugging: audio, particles and mesh collision tuning</span></td></tr>
+        <tr><td class="wk">W9</td><td><strong>期中：</strong>MR 漆彈射擊與效能優化系統總整合成果審查<span class="en"><strong>Midterm:</strong> review of the integrated MR paintball system</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 1.4 (2/2) ============ -->
+<section class="slide" data-toc="1.4 課程綱要 Syllabus (2/2)" data-n="1.4">
+  <div class="eyebrow"><span class="num">1.4</span><span class="kicker">Syllabus</span><span class="part">2 / 2</span></div>
+  <h2 class="title">第 10 週至第 18 週<span class="en">Weeks 10 to 18</span></h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th class="wk">週次<span class="en">Week</span></th><th>教學內容<span class="en">Content</span></th></tr></thead>
+      <tbody>
+        <tr><td class="wk">W10</td><td style="color:var(--vr)"><strong>【主題二：引導賽車】</strong>動態空間跑道節點編輯器<span class="en"><strong>[Theme 2: Guided Racing]</strong> Dynamic spatial track-node editor</span></td></tr>
+        <tr><td class="wk">W11</td><td>幾何尋路系統：指尖／頭部朝向（Head Gaze）射線偵測與 LookAt 朝向控制<span class="en">Geometric path-following: fingertip / head-gaze raycasting and LookAt turning</span></td></tr>
+        <tr><td class="wk">W12</td><td>平滑移動與向量跟隨：SmoothDamp、Slerp 轉向、地板貼合<span class="en">Smooth movement and vector following: SmoothDamp, Slerp turning, floor snapping</span></td></tr>
+        <tr><td class="wk">W13</td><td>進階 MR：Meta Depth API 導入與真實家具空間遮蔽<span class="en">Advanced MR: adopting the Meta Depth API for real-furniture occlusion</span></td></tr>
+        <tr><td class="wk">W14</td><td>跨專案技術重用：URP 牆面焦黑貼圖整合（重構為可重用元件）<span class="en">Cross-project reuse: scorch-mark decals, refactored into a reusable component</span></td></tr>
+        <tr><td class="wk">W15</td><td>期末專案整合：遊戲流程狀態機（Start / Playing / Over）<span class="en">Final integration: the game-flow state machine</span></td></tr>
+        <tr><td class="wk">W16</td><td>期末專案整合：UI／UX 與音效整合優化<span class="en">Final integration: UI/UX and audio polish</span></td></tr>
+        <tr><td class="wk">W17</td><td>專案打包、頭盔部署優化與動態效能測試<span class="en">Building, headset deployment and runtime performance profiling</span></td></tr>
+        <tr><td class="wk">W18</td><td><strong>期末：</strong>MR 遊戲專案總成果發表<span class="en"><strong>Final:</strong> MR project presentation</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>課綱異動說明：</b>第 11 週用詞已由「視線」修正為「頭部朝向（Head Gaze）」；第 15、16 週原為重複文字，已拆分為「流程狀態機」與「UI/UX 與音效」。
+    <span class="en"><b>Syllabus amendments:</b> week 11 now says "head gaze" instead of "gaze"; weeks 15 and 16, previously identical, are now split into the state machine and the UI/audio pass.</span></div>
+</section>
+
+<!-- ============ 1.5 (1/2) ============ -->
+<section class="slide" data-toc="1.5 製作主題 Projects (1/2)" data-n="1.5">
+  <div class="eyebrow"><span class="num">1.5</span><span class="kicker">Projects</span><span class="part">1 / 2</span></div>
+  <h2 class="title">製作主題一：MR 漆彈射擊<span class="en">Theme 1 — MR Paintball Shooting</span></h2>
+  <p class="lead">兩個主題不是各自獨立的練習——主題二會<strong>重用</strong>主題一的貼圖與物件池系統，這個「重構成可重用元件」的過程本身就是評分項目。
+    <span class="en">The two themes are not separate exercises. Theme 2 <em>reuses</em> the decal and pooling systems from Theme 1, and that refactoring into reusable components is itself part of the assessment.</span></p>
+
+  <div class="card mrcard">
+    <div class="tag mr">主題一 · W4–W9</div>
+    <div class="fig" style="box-shadow:none;border:none;padding:0;margin-top:10px">
+      <svg viewBox="0 0 640 132" role="img" aria-label="漆彈射擊示意：射線命中牆面後沿法向量貼上漆點">
+        <path d="M20 118 L20 26 L320 14 L620 26 L620 118 Z" fill="none" stroke="var(--ink-3)" stroke-width="1.3"/>
+        <rect x="28" y="84" width="46" height="18" rx="3" fill="var(--mr)"/>
+        <text x="51" y="116" text-anchor="middle" font-size="9.5" fill="var(--ink-3)" font-family="Archivo,sans-serif">gun</text>
+        <path d="M78 90 L392 50" stroke="var(--mr)" stroke-width="1.8" stroke-dasharray="6 4"/>
+        <text x="210" y="60" font-size="10" fill="var(--mr)" font-family="IBM Plex Mono,monospace">Ray → MRUKRoom.Raycast()</text>
+        <circle cx="398" cy="49" r="13" fill="var(--mr)"/>
+        <circle cx="418" cy="66" r="6.5" fill="var(--mr)" opacity=".75"/>
+        <circle cx="382" cy="70" r="5" fill="var(--mr)" opacity=".6"/>
+        <path d="M398 49 L448 28" stroke="var(--ok)" stroke-width="2" marker-end="url(#n1)"/>
+        <text x="456" y="26" font-size="10.5" fill="var(--ok)" font-family="IBM Plex Mono,monospace">hit.normal</text>
+        <text x="456" y="40" font-size="9.5" fill="var(--ink-3)" font-family="Archivo,sans-serif">align the splat to this</text>
+        <text x="320" y="130" text-anchor="middle" font-size="10" fill="var(--ink-3)" font-family="Noto Sans TC,sans-serif">真實牆面（MRUK Wall Anchor） / a real wall, as a scanned anchor</text>
+        <defs><marker id="n1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 z" fill="var(--ok)"/></marker></defs>
+      </svg>
+    </div>
+    <ul style="margin-top:12px">
+      <li>MRUK 房間射線 → 取得 <code>hit.point</code> 與 <code>hit.normal</code>
+        <span class="en">Raycast against the MRUK room to obtain the hit point and its surface normal.</span></li>
+      <li>法向量對齊貼片，沿法線外推 5mm 避免 Z-fighting
+        <span class="en">Align the decal to that normal and offset it 5 mm along it to avoid Z-fighting.</span></li>
+      <li>Object Pool 管理大量漆點，避免 GC 尖峰造成掉幀
+        <span class="en">Pool the splats so garbage-collection spikes never drop a frame.</span></li>
+      <li>虛擬槍枝抓取 ＋ World Space Canvas 彈藥 UI
+        <span class="en">Grab interaction for the gun, with the ammo counter on a world-space canvas.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 1.5 (2/2) ============ -->
+<section class="slide" data-toc="1.5 製作主題 Projects (2/2)" data-n="1.5">
+  <div class="eyebrow"><span class="num">1.5</span><span class="kicker">Projects</span><span class="part">2 / 2</span></div>
+  <h2 class="title">製作主題二：指尖／頭部朝向引導賽車<span class="en">Theme 2 — Fingertip / Head-Gaze Guided Racing</span></h2>
+
+  <div class="card vrcard">
+    <div class="tag vr">主題二 · W10–W14</div>
+    <div class="fig" style="box-shadow:none;border:none;padding:0;margin-top:10px">
+      <svg viewBox="0 0 640 132" role="img" aria-label="引導賽車示意：地板節點串成跑道，小車跟隨並被真實家具遮蔽">
+        <path d="M20 118 L110 44 L530 44 L620 118 Z" fill="var(--vr)" opacity=".08"/>
+        <path d="M20 118 L110 44 L530 44 L620 118 Z" fill="none" stroke="var(--ink-3)" stroke-width="1.2"/>
+        <path d="M110 104 Q240 58 370 90 T580 74" fill="none" stroke="var(--vr)" stroke-width="2" stroke-dasharray="5 4"/>
+        <circle cx="110" cy="104" r="6" fill="var(--vr)"/><circle cx="256" cy="68" r="6" fill="var(--vr)"/>
+        <circle cx="400" cy="92" r="6" fill="var(--vr)"/><circle cx="580" cy="74" r="6" fill="var(--vr)"/>
+        <text x="256" y="58" text-anchor="middle" font-size="9.5" fill="var(--vr)" font-family="IBM Plex Mono,monospace">node</text>
+        <rect x="212" y="78" width="26" height="13" rx="3" fill="var(--vr)"/>
+        <text x="225" y="104" text-anchor="middle" font-size="9.5" fill="var(--ink-3)" font-family="Archivo,sans-serif">car</text>
+        <rect x="430" y="50" width="86" height="46" rx="3" fill="var(--surface-2)" stroke="var(--ink-3)" stroke-width="1.2"/>
+        <text x="473" y="72" text-anchor="middle" font-size="10" fill="var(--ink-3)" font-family="Noto Sans TC,sans-serif">真實沙發</text>
+        <text x="473" y="85" text-anchor="middle" font-size="9" fill="var(--ink-3)" font-family="Archivo,sans-serif">real sofa (occluder)</text>
+        <text x="320" y="130" text-anchor="middle" font-size="10" fill="var(--ink-3)" font-family="Noto Sans TC,sans-serif">真實地板（MRUK Floor Anchor） / the real floor, as a scanned anchor</text>
+      </svg>
+    </div>
+    <ul style="margin-top:12px">
+      <li>射線點擊真實地板 → 生成節點 → 串成跑道
+        <span class="en">Raycast onto the real floor, drop nodes, and chain them into a track.</span></li>
+      <li><strong>Head Gaze</strong>（非 eye gaze，見 1.3.4）或指尖射線引導行進
+        <span class="en">Guide the car with head gaze — not eye gaze, see §1.3.4 — or with a fingertip ray.</span></li>
+      <li><code>SmoothDamp</code> ＋ <code>Slerp</code> 做有慣性的平滑跟隨與轉向
+        <span class="en">Use SmoothDamp and Slerp so following and turning carry a sense of weight.</span></li>
+      <li>Depth API 遮蔽：小車開到真實家具後方會被擋住
+        <span class="en">Depth API occlusion: the car disappears behind real furniture.</span></li>
+    </ul>
+  </div>
+
+  <div class="good"><strong>效能驗收標準（兩個主題共用）：</strong>72 fps 穩定 · Draw Call &lt; 100 · 三角形 &lt; 500K · GPU frame time &lt; 13 ms。
+    <span class="en"><strong>Performance targets, shared by both themes:</strong> a stable 72 fps, under 100 draw calls, under 500K triangles, GPU frame time below 13 ms.</span></div>
+</section>
+
+<!-- ============ 1.6 ============ -->
+<section class="slide" data-toc="1.6 成績評量 Assessment" data-n="1.6">
+  <div class="eyebrow"><span class="num">1.6</span><span class="kicker">Assessment</span></div>
+  <h2 class="title">成績評量方式<span class="en">How you are assessed</span></h2>
+
+  <div class="fig">
+    <svg viewBox="0 0 720 92" role="img" aria-label="成績配分：課堂參與20%、平時作業30%、期中20%、期末30%">
+      <g font-family="Noto Sans TC,sans-serif" font-size="12" fill="#fff" text-anchor="middle">
+        <rect x="10" y="16" width="138" height="42" rx="6" fill="var(--ink-2)"/><text x="79" y="35">課堂參與 20%</text><text x="79" y="49" font-size="9.5" font-family="Archivo,sans-serif" opacity=".85">Participation</text>
+        <rect x="152" y="16" width="207" height="42" rx="6" fill="var(--mr)"/><text x="255" y="35">平時作業 30%</text><text x="255" y="49" font-size="9.5" font-family="Archivo,sans-serif" opacity=".9">Assignments ×2</text>
+        <rect x="363" y="16" width="138" height="42" rx="6" fill="var(--vr)"/><text x="432" y="35">期中 20%</text><text x="432" y="49" font-size="9.5" font-family="Archivo,sans-serif" opacity=".9">Midterm review</text>
+        <rect x="505" y="16" width="205" height="42" rx="6" fill="var(--ok)"/><text x="607" y="35">期末 30%</text><text x="607" y="49" font-size="9.5" font-family="Archivo,sans-serif" opacity=".9">Final presentation</text>
+      </g>
+      <g font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--ink-3)" text-anchor="middle">
+        <text x="14" y="76">0%</text><text x="360" y="76">50%</text><text x="704" y="76">100%</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>項目<span class="en">Item</span></th><th class="mono">比例<span class="en">Weight</span></th><th>實際執行方式<span class="en">How it is actually done</span></th><th class="wk">時程<span class="en">Due</span></th></tr></thead>
+      <tbody>
+        <tr><td><strong>課堂參與討論</strong><span class="en">Participation</span></td><td class="mono">20%</td>
+          <td>出席、實作進度回報、技術問題討論與互助除錯<span class="en">Attendance, progress reporting, technical discussion and peer debugging</span></td><td class="wk">全學期</td></tr>
+        <tr><td><strong>平時作業（第一次）</strong><span class="en">Assignment 1</span></td><td class="mono">15%</td>
+          <td><strong>漆彈子系統</strong>：射線命中牆面並正確生成對齊的漆點<span class="en">Paintball subsystem: raycast a wall and spawn a correctly aligned splat</span></td><td class="wk">W6 前</td></tr>
+        <tr><td><strong>平時作業（第二次）</strong><span class="en">Assignment 2</span></td><td class="mono">15%</td>
+          <td><strong>賽車尋路</strong>：地板節點跑道 ＋ 小車平滑跟隨<span class="en">Racing path-finding: a floor node track with smooth car following</span></td><td class="wk">W12 前</td></tr>
+        <tr><td><strong>期中</strong><span class="en">Midterm</span></td><td class="mono">20%</td>
+          <td>以<strong>專案審查</strong>方式進行：漆彈系統總整合 ＋ 效能數據<span class="en">Conducted as a project review: the integrated paintball system plus performance figures</span></td><td class="wk">W9</td></tr>
+        <tr><td><strong>期末</strong><span class="en">Final</span></td><td class="mono">30%</td>
+          <td>以<strong>成果發表</strong>方式進行：可安裝 APK ＋ 實機展示 ＋ 技術說明<span class="en">Conducted as a presentation: an installable APK, a live demo, and a technical account</span></td><td class="wk">W18</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>注意：</b>期中與期末<strong>不是紙筆考試</strong>，而是實機專案審查與成果發表。評分看三件事——<strong>功能是否在頭盔上跑得起來</strong>、<strong>效能數據是否達標</strong>、<strong>能否說清楚自己的技術選擇</strong>。
+    <span class="en"><b>Note:</b> neither the midterm nor the final is a written exam; both are on-device reviews. Three things are graded — whether it runs on the headset, whether it meets the performance targets, and whether you can explain the technical choices you made.</span></div>
+</section>
+
+<!-- ============ 1.7 ============ -->
+<section class="slide" data-toc="1.7 版本鎖定 Version Lock" data-n="1.7">
+  <div class="eyebrow"><span class="num">1.7</span><span class="kicker">Version Lock</span></div>
+  <h2 class="title">版本鎖定：整學期不升版<span class="en">Version lock — nothing gets upgraded this semester</span></h2>
+  <p class="lead">課堂上最常見的災難，是同學各自升級 Unity 或 Meta SDK，導致 SDK 破圖、專案打不開、互相無法支援。
+    <span class="en">The most common classroom disaster is students upgrading Unity or the Meta SDK on their own — broken shaders, projects that will not open, and nobody able to help anybody else.</span></p>
+
+  <div class="card" style="border-top:3px solid var(--ok)">
+    <div class="tag" style="color:var(--ok)">REQUIRED · 本課程唯一指定版本 / the only permitted version</div>
+    <p style="font-family:var(--f-mo);font-size:clamp(17px,3.4vw,25px);font-weight:600;margin-top:8px;color:var(--ok);word-break:break-all">Unity 6.3 LTS &nbsp;6000.3.18f1</p>
+    <p class="lead" style="font-size:13.5px;margin-top:6px">安裝時請於 Unity Hub 確認版本號完全一致，包含後綴 <code>f1</code>。
+      <span class="en">Check the full version string in Unity Hub, including the <code>f1</code> suffix. Opening a project in a different build can trigger an asset upgrade you cannot undo.</span></p>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>項目<span class="en">Item</span></th><th>鎖定值<span class="en">Locked value</span></th><th>理由<span class="en">Why</span></th></tr></thead>
+      <tbody>
+        <tr><td><strong>Unity</strong></td><td class="mono">6.3 LTS (6000.3.18f1)</td><td>現行 LTS，官方支援至 2027/12，涵蓋本學期與後續畢專<span class="en">Current LTS, supported to Dec 2027 — covers this semester and your capstone</span></td></tr>
+        <tr><td><strong>Meta XR SDK</strong></td><td class="mono">All-in-One SDK v205.0</td><td>一次帶入 Core / Interaction / MRUK / Audio / Haptics / Platform / Voice<span class="en">Pulls in every Meta module in one package</span></td></tr>
+        <tr><td><strong>XR Plug-in</strong></td><td class="mono">OpenXR ＋ Meta XR Feature</td><td>Oculus XR Plugin 已 deprecated，v74 起必須走 OpenXR<span class="en">The Oculus XR Plugin is deprecated; OpenXR is mandatory from v74 onward</span></td></tr>
+        <tr><td><strong>Render Pipeline</strong></td><td class="mono">URP</td><td>Depth API 與 MRUK 的 shader 皆以 URP 為預設<span class="en">Both the Depth API and MRUK ship URP shaders by default</span></td></tr>
+        <tr><td><strong>Graphics API</strong></td><td class="mono">Vulkan（唯一）</td><td>Depth API / Multiview 的必要條件，移除 OpenGLES3<span class="en">Required by Depth API and Multiview; remove OpenGLES3</span></td></tr>
+        <tr><td><strong>Stereo Rendering</strong></td><td class="mono">Multiview</td><td>Quest 3 效能必要<span class="en">Necessary for Quest 3 performance</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>不要自行升版。</b>教師會提供寫死版本號的 <code>Packages/manifest.json</code>，請直接沿用。
+    <span class="en"><b>Do not upgrade on your own.</b> A <code>Packages/manifest.json</code> with pinned versions will be handed out — use it as-is. Damage caused by upgrading is not covered by remediation.</span></div>
+</section>
+
+<!-- ============ 1.7.1 (1/2) ============ -->
+<section class="slide" data-toc="1.7.1 環境建置 Setup 1–3 (1/2)" data-n="1.7.1">
+  <div class="eyebrow"><span class="num">1.7.1</span><span class="kicker">Setup · Step 1–3</span><span class="part">1 / 2</span></div>
+  <h2 class="title">環境建置 SOP：安裝與專案<span class="en">Setup SOP: installation and project creation</span></h2>
+  <p class="lead">全程約 60～90 分鐘。請照順序做，跳步驟會在 Step 10 驗收時失敗。
+    <span class="en">Budget 60–90 minutes. Follow the order — skipping a step will fail the verification in Step 10.</span></p>
+
+  <div class="grid2">
+    <div class="flat"><h3 class="sec"><span>Step 1｜Unity Hub 安裝模組<span class="en">Install modules via Unity Hub</span></span></h3>
+      <p>安裝 <strong>Unity 6.3 LTS (6000.3.18f1)</strong>，勾選：<span class="en">Install Unity 6.3 LTS (6000.3.18f1) with these modules ticked:</span></p>
+      <ul><li>Android Build Support</li><li>OpenJDK</li><li>Android SDK &amp; NDK Tools</li></ul></div>
+    <div class="flat"><h3 class="sec"><span>Step 2｜建立專案<span class="en">Create the project</span></span></h3>
+      <p>Template 選 <strong>Universal 3D</strong>。<span class="en">Choose the Universal 3D template.</span></p>
+      <p style="font-size:13px;color:var(--ink-3)">不要選 VR template——它會帶進 XRI，與 Meta Interaction SDK 疊床架屋。
+        <span class="en">Do not pick the VR template: it drags in XRI, which duplicates the Meta Interaction SDK.</span></p></div>
+  </div>
+
+  <div class="flat"><h3 class="sec"><span>Step 3｜安裝 Meta XR SDK<span class="en">Install the Meta XR SDK</span></span></h3>
+    <p>Package Manager → <code>+</code> → Add package by name：<span class="en">In Package Manager, add the package by name:</span></p>
+    <p style="font-family:var(--f-mo);font-size:14px;word-break:break-all;color:var(--mr)">com.meta.xr.sdk.all</p>
+    <p style="font-size:13px;color:var(--ink-3)">或直接在 <code>Packages/manifest.json</code> 寫死版本，確保全班一致。
+      <span class="en">Or pin the version directly in <code>Packages/manifest.json</code> so the whole class stays identical.</span></p></div>
+</section>
+
+<!-- ============ 1.7.1 (2/2) ============ -->
+<section class="slide" data-toc="1.7.1 環境建置 Setup 4–5 (2/2)" data-n="1.7.1">
+  <div class="eyebrow"><span class="num">1.7.1</span><span class="kicker">Setup · Step 4–5</span><span class="part">2 / 2</span></div>
+  <h2 class="title">環境建置 SOP：XR 外掛與自動修正<span class="en">Setup SOP: XR plug-ins and automated fixes</span></h2>
+
+  <div class="flat"><h3 class="sec"><span>Step 4｜XR Plug-in Management<span class="en">Configure XR Plug-in Management</span></span></h3>
+    <p><code>Project Settings → XR Plug-in Management → Android</code></p>
+    <ul>
+      <li>勾選 <strong>OpenXR</strong><span class="en">Enable OpenXR.</span></li>
+      <li>Interaction Profiles 加入 <strong>Oculus Touch Controller Profile</strong>
+        <span class="en">Add the Oculus Touch Controller Profile (add the Hand Interaction Profile too if you want hand tracking).</span></li>
+      <li>Feature Groups 勾 <strong>Meta XR Feature</strong>、<strong>Meta XR Foveation</strong>、<strong>Meta XR Subsampled Layout</strong>
+        <span class="en">Tick those three OpenXR feature groups.</span></li>
+    </ul></div>
+
+  <div class="flat"><h3 class="sec"><span>Step 5｜Project Setup Tool（省下 80% 手動設定）<span class="en">Run the Project Setup Tool — it handles about 80% of the manual settings</span></span></h3>
+    <p><code>Meta → Tools → Project Setup Tool</code> → 切到 Android 分頁 → <strong>Fix All / Apply All</strong>
+      <span class="en">Open it, switch to the Android tab, then Fix All / Apply All.</span></p>
+    <p>自動處理：Vulkan-only、Multiview、Linear Color Space、ARM64、IL2CPP、Min API Level、ASTC 貼圖壓縮、Optimized Frame Pacing。
+      <span class="en">It sets Vulkan-only, Multiview, linear colour space, ARM64, IL2CPP, the minimum API level, ASTC texture compression and optimised frame pacing.</span></p>
+    <div class="note" style="margin-top:4px">⚠ Fix 完務必<strong>再開一次</strong>，確認沒有殘留的紅色／黃色警告。
+      <span class="en">⚠ Reopen the tool after fixing and confirm no red or amber warnings remain.</span></div></div>
+</section>
+
+<!-- ============ 1.7.2 (1/2) ============ -->
+<section class="slide" data-toc="1.7.2 環境建置 Setup 6–8 (1/2)" data-n="1.7.2">
+  <div class="eyebrow"><span class="num">1.7.2</span><span class="kicker">Setup · Step 6–8</span><span class="part">1 / 2</span></div>
+  <h2 class="title">環境建置 SOP：權限與透視相機<span class="en">Setup SOP: permissions and the passthrough camera</span></h2>
+
+  <div class="grid2">
+    <div class="flat"><h3 class="sec"><span>Step 6｜OVRManager 權限開關<span class="en">Set the OVRManager toggles</span></span></h3>
+      <p>放入 <strong>Camera Rig Building Block</strong>，於 OVRManager 設定：<span class="en">Add the Camera Rig building block, then on OVRManager set:</span></p>
+      <ul><li>Passthrough Support ＝ <strong>Required</strong></li><li>Scene Support ＝ <strong>Required</strong></li>
+        <li>Anchor Support ＝ <strong>Required</strong></li><li>Permission Requests On Startup 勾 <strong>Scene</strong></li>
+        <li>Insight Passthrough → Enable Passthrough ✔</li></ul></div>
+    <div class="flat"><h3 class="sec"><span>Step 7｜更新 Manifest<span class="en">Update the Android manifest</span></span></h3>
+      <p><code>Meta → Tools → Update AndroidManifest.xml</code></p>
+      <p style="font-size:13px;color:var(--ink-3)">每次改動 Quest Features 後都要重跑。這是「編輯器好好的、上機卻黑畫面」最常見的原因。
+        <span class="en">Re-run this every time you change a Quest feature. Forgetting to is the most common cause of "fine in the editor, black screen on the headset".</span></p></div>
+  </div>
+
+  <div class="flat"><h3 class="sec"><span>Step 8｜Passthrough 相機設定<span class="en">Configure the camera for passthrough</span></span></h3>
+    <ul>
+      <li>刪除場景原本的 Main Camera（Camera Rig 自帶）
+        <span class="en">Delete the scene's default Main Camera — the Camera Rig brings its own.</span></li>
+      <li><code>Lighting → Environment → Skybox Material</code> 設為 <strong>None</strong>
+        <span class="en">Set the skybox material to None.</span></li>
+      <li>CenterEyeAnchor 的 Camera：Clear Flags ＝ <strong>Solid Color</strong>，背景色 <strong>RGBA 全 0（Alpha 也要 0）</strong>
+        <span class="en">On the CenterEyeAnchor camera, clear to a solid colour whose RGBA channels are all zero — the alpha channel included.</span></li>
+    </ul></div>
+</section>
+
+<!-- ============ 1.7.2 (2/2) ============ -->
+<section class="slide" data-toc="1.7.2 環境建置 Setup 9–10 (2/2)" data-n="1.7.2">
+  <div class="eyebrow"><span class="num">1.7.2</span><span class="kicker">Setup · Step 9–10</span><span class="part">2 / 2</span></div>
+  <h2 class="title">環境建置 SOP：頭盔端與驗收<span class="en">Setup SOP: the headset, and verification</span></h2>
+
+  <div class="flat"><h3 class="sec"><span>Step 9｜頭盔端準備<span class="en">Prepare the headset</span></span></h3>
+    <ol>
+      <li>開啟開發者模式（Meta Horizon App → 裝置 → 開發者模式）
+        <span class="en">Turn on developer mode in the Meta Horizon app.</span></li>
+      <li>安裝 <strong>MQDH</strong>，確認 <code>adb devices</code> 看得到裝置
+        <span class="en">Install Meta Quest Developer Hub and confirm the headset appears in <code>adb devices</code>.</span></li>
+      <li><strong>在頭盔內執行 Space Setup 掃描房間</strong>：牆面、地板、桌子、沙發
+        <span class="en">Run Space Setup inside the headset and scan the walls, floor, desks and sofa.</span></li>
+    </ol>
+    <p style="font-size:13px;color:var(--ink-3)">這步不做，MRUK 一定抓不到房間。
+      <span class="en">Skip this and MRUK will never find a room.</span></p></div>
+
+  <div class="good"><h3 class="sec" style="margin-bottom:4px"><span>Step 10｜驗收 Build（本週作業）<span class="en">Verification build — this week's deliverable</span></span></h3>
+    空場景 ＋ Camera Rig ＋ Passthrough Building Block → <code>File → Build And Run</code>。<br>
+    <strong>在頭盔裡看到教室的透視畫面 ＝ 環境建置成功。這一步沒過，後面全部不用做。</strong>
+    <span class="en">An empty scene with the Camera Rig and the Passthrough building block, then Build And Run. Seeing the classroom through the headset means the setup succeeded. Until this passes, nothing after it can be attempted.</span></div>
+</section>
+
+<!-- ============ 1.8 (1/2) ============ -->
+<section class="slide" data-toc="1.8 本週任務 Homework (1/2)" data-n="1.8">
+  <div class="eyebrow"><span class="num">1.8</span><span class="kicker">Homework</span><span class="part">1 / 2</span></div>
+  <h2 class="title">本週任務<span class="en">What to do before next week</span></h2>
+  <div class="grid2">
+    <div class="card mrcard">
+      <div class="tag mr">本週必做 / Required</div>
+      <ol style="margin-top:8px">
+        <li>安裝 <strong>Unity 6.3 LTS (6000.3.18f1)</strong>，含 Android Build Support / OpenJDK / SDK &amp; NDK
+          <span class="en">Install Unity 6.3 LTS (6000.3.18f1) with the Android modules.</span></li>
+        <li>依 1.7.1～1.7.2 完成環境建置至 <strong>Step 10 驗收 Build</strong>
+          <span class="en">Work through §1.7.1–1.7.2 up to and including the Step 10 verification build.</span></li>
+        <li>Quest 3 開啟開發者模式並完成一次 <strong>Space Setup</strong> 掃描
+          <span class="en">Enable developer mode on the Quest 3 and complete one Space Setup scan.</span></li>
+        <li>觀看 1.3.5 三支影片，各寫 <strong>2～3 句</strong>觀察筆記
+          <span class="en">Watch the three videos in §1.3.5 and write two or three sentences on each.</span></li>
+      </ol>
+    </div>
+    <div class="card">
+      <div class="tag" style="color:var(--ink-2)">繳交方式 / What to submit</div>
+      <ul style="margin-top:8px">
+        <li>頭盔中透視畫面的<strong>螢幕截圖或錄影</strong>（MQDH 可直接錄）
+          <span class="en">A screenshot or recording of the passthrough view — MQDH can capture it directly.</span></li>
+        <li><code>Player Settings</code> 截圖：需看得到 Vulkan、Multiview、ARM64
+          <span class="en">A screenshot of Player Settings showing Vulkan, Multiview and ARM64.</span></li>
+        <li>影片觀察筆記（純文字即可）
+          <span class="en">Your video notes — plain text is fine.</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><b>卡關怎麼辦：</b>先確認 Step 5 的 Project Setup Tool 是否還有黃／紅警告，再確認 Step 7 的 Manifest 是否重跑過。這兩項解決約八成的建置問題。
+    <span class="en"><b>If you get stuck:</b> first check whether the Project Setup Tool (Step 5) still shows amber or red warnings, then check whether you re-ran the manifest update (Step 7). Those two account for roughly eighty per cent of build problems.</span></div>
+</section>
+
+<!-- ============ 1.8 (2/2) ============ -->
+<section class="slide" data-toc="1.8 下週預告 Next Week (2/2)" data-n="1.8">
+  <div class="eyebrow"><span class="num">1.8</span><span class="kicker">Next Week</span><span class="part">2 / 2</span></div>
+  <h2 class="title">下週預告：第二單元<span class="en">Coming up — Unit 2</span></h2>
+
+  <div class="card mrcard">
+    <h3 class="sec"><span>Passthrough 透視基礎<span class="en">Passthrough fundamentals</span></span></h3>
+    <ul style="margin-top:6px">
+      <li>Meta XR SDK 的 Building Blocks 配置
+        <span class="en">Configuring the Meta XR SDK building blocks.</span></li>
+      <li>Passthrough Layer 的合成順序
+        <span class="en">How the passthrough layer composites with your render.</span></li>
+      <li>第一個「虛擬物件出現在真實教室裡」的場景
+        <span class="en">Your first scene with a virtual object standing in the real classroom.</span></li>
+    </ul>
+    <div class="note" style="margin-top:12px">請務必先完成本週 Step 10，否則下週無法跟上進度。
+      <span class="en">Finish this week's Step 10 first — without it you cannot follow next week's lab.</span></div>
+  </div>
+
+  <p class="lead" style="font-size:13px;color:var(--ink-3)">XR遊戲實作 · 115 學年度第 1 學期 · 弘光科技大學 多媒體遊戲發展與應用系 · 洪明顯
+    <span class="en">XR Game Development · Academic Year 115, Semester 1 · Dept. of Multimedia Game Development and Applications, Hungkuang University · Ming-Hsien Hung</span></p>
+</section>
+</main>
+
+<nav class="navbar">
+  <button class="navbtn" id="prev" type="button">← 上一頁</button>
+  <div class="counter"><b id="cur">1</b> / <span id="tot">1</span> · <span id="lbl"></span></div>
+  <select class="jump" id="jump" aria-label="跳至小節 Jump to section"></select>
+  <button class="navbtn" id="next" type="button">下一頁 →</button>
+</nav>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var stage=document.getElementById('stage'), prev=document.getElementById('prev'),
+      next=document.getElementById('next'), cur=document.getElementById('cur'),
+      tot=document.getElementById('tot'), lbl=document.getElementById('lbl'),
+      bar=document.getElementById('bar'), jump=document.getElementById('jump'),
+      toc=document.getElementById('toc');
+  var i=0;
+  tot.textContent = slides.length;
+
+  // 跳頁選單：列出全部頁面
+  slides.forEach(function(s,idx){
+    var o=document.createElement('option');
+    o.value=idx; o.textContent=(idx+1)+'. '+s.dataset.toc; jump.appendChild(o);
+  });
+
+  // 目錄頁：只列第二層（1.1、1.2…），同編號的續頁不重複列出
+  var seen={};
+  slides.forEach(function(s,idx){
+    if(idx<2) return;
+    var n=s.dataset.n;
+    if(n.split('.').length>2 || seen[n]) return;   // 略過 1.3.1 這類第三層與重複編號
+    seen[n]=1;
+    var t=s.dataset.toc.replace(n,'').replace(/\(\d\s*\/\s*\d\)/,'').trim();
+    var b=document.createElement('button');
+    b.type='button'; b.dataset.goIdx=idx;
+    b.innerHTML='<b>'+n+'</b><span>'+t+'</span>';
+    toc.appendChild(b);
+  });
+
+  function show(n,push){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(s,idx){ s.hidden = idx!==i; });
+    cur.textContent=i+1;
+    lbl.textContent=slides[i].dataset.toc;
+    jump.value=i;
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    prev.disabled=i===0; next.disabled=i===slides.length-1;
+    stage.scrollTop=0;
+    if(push!==false){ try{ history.replaceState(null,'','#'+(i+1)); }catch(e){} }
+  }
+  prev.addEventListener('click',function(){show(i-1);});
+  next.addEventListener('click',function(){show(i+1);});
+  jump.addEventListener('change',function(){show(+jump.value);});
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-go],[data-go-idx]'); if(!b) return;
+    if(b.dataset.goIdx!==undefined){ show(+b.dataset.goIdx); return; }
+    var k=b.dataset.go;
+    for(var x=0;x<slides.length;x++){ if(slides[x].dataset.n===k){ show(x); return; } }
+  });
+  document.addEventListener('keydown',function(e){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if(e.key==='ArrowRight'||e.key==='PageDown'){ e.preventDefault(); show(i+1); }
+    if(e.key==='ArrowLeft' ||e.key==='PageUp'){ e.preventDefault(); show(i-1); }
+    if(e.key==='Home'){ e.preventDefault(); show(0); }
+    if(e.key==='End'){ e.preventDefault(); show(slides.length-1); }
+  });
+
+  // 中英對照開關：預設顯示中英，投影時可切成純中文
+  var eb=document.getElementById('enbtn');
+  function setEn(v){
+    document.body.dataset.en=v;
+    eb.textContent = v==='off' ? '中 ⇄ 中英' : '中英 ⇄ 中';
+    try{ localStorage.setItem('xr-w1-en',v); }catch(e){}
+  }
+  var savedEn='on';
+  try{ savedEn=localStorage.getItem('xr-w1-en')||'on'; }catch(e){}
+  setEn(savedEn);
+  eb.addEventListener('click',function(){ setEn(document.body.dataset.en==='off'?'on':'off'); });
+
+  // 深／淺色主題
+  var tb=document.getElementById('themebtn');
+  try{ var savedT=localStorage.getItem('xr-w1-theme'); if(savedT) document.documentElement.dataset.theme=savedT; }catch(e){}
+  tb.addEventListener('click',function(){
+    var d=document.documentElement, n = d.dataset.theme==='dark' ? 'light' : 'dark';
+    d.dataset.theme=n;
+    try{ localStorage.setItem('xr-w1-theme',n); }catch(e){}
+  });
+
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  show(isNaN(h)?0:h-1,false);
+})();
+</script>
