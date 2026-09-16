@@ -1,3 +1,20 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="115-1 XR遊戲實作 第一單元：課程導論、MR 與 VR 差異、Unity 6.3 LTS 環境建置（中英對照簡報）">
+<style>
+/* --- 獨立部署用 reset：Artifact 平台原本會自動注入，放到 GitHub Pages 必須自己帶 --- */
+:root{
+  color-scheme: light dark;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+body{ margin:0; }
+img{ max-width:100%; }
+[hidden]{ display:none !important; }   /* ★ 關鍵：沒有這行，所有頁面會同時顯示 */
+</style>
 <title>XR遊戲實作 第一單元</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -188,7 +205,8 @@ svg{display:block;max-width:100%;height:auto}
   .lockchip{display:none}
 }
 </style>
-
+</head>
+<body>
 <header class="topbar">
   <div class="brand">XR遊戲實作 · <span>第一單元</span></div>
   <div class="lockchip">Unity 6.3 LTS · 6000.3.18f1</div>
@@ -203,7 +221,7 @@ svg{display:block;max-width:100%;height:auto}
 <!-- ============ 封面 ============ -->
 <section class="slide cover" data-toc="封面 Cover" data-n="封面">
   <div class="kicker">Hungkuang University · 115-1 · Week 01</div>
-  <h1 class="big">從虛擬再回到<em>真實</em>
+  <h1 class="big">從虛擬<br>再回到<em>真實</em>
     <span class="bigen">From Virtual, Back to Reality</span></h1>
   <p class="lead">第一單元｜課程導論：MR 混合實境趨勢與 Quest 3 開發環境建置
     <span class="en">Unit 1｜Course Introduction: MR Trends &amp; Quest 3 Environment Setup</span></p>
@@ -1139,3 +1157,6 @@ svg{display:block;max-width:100%;height:auto}
   show(isNaN(h)?0:h-1,false);
 })();
 </script>
+
+</body>
+</html>
